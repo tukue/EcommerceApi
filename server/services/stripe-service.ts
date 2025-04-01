@@ -3,17 +3,28 @@ import { log } from '../vite';
 import { Payment, PaymentStatus } from '@shared/schema';
 
 // Initialize Stripe with the API key from environment variables
-// When testing locally, this will use an empty string which will fail gracefully
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2025-02-24.acacia', // Specify the Stripe API version
-});
+let stripe: Stripe | null = null;
+
+// Only initialize Stripe if we have a valid API key
+if (stripeSecretKey && stripeSecretKey.startsWith('sk_')) {
+  try {
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-02-24.acacia', // Specify the Stripe API version
+    });
+    log('Stripe initialized successfully', 'stripe-service');
+  } catch (error) {
+    log(`Failed to initialize Stripe: ${(error as Error).message}`, 'stripe-service');
+  }
+} else {
+  log('Stripe API key not configured. Stripe services will be unavailable', 'stripe-service');
+}
 
 /**
  * Check if Stripe is properly configured with an API key
  */
 export function isStripeConfigured(): boolean {
-  return Boolean(stripeSecretKey && stripeSecretKey.startsWith('sk_'));
+  return Boolean(stripe);
 }
 
 /**
@@ -32,6 +43,10 @@ export async function createPaymentIntent(
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
+    
     // Convert amount to cents if needed (Stripe uses cents)
     const amountInCents = Math.round(amount * 100);
 
@@ -63,6 +78,9 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<St
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
     return await stripe.paymentIntents.retrieve(paymentIntentId);
   } catch (error) {
     log(`Failed to retrieve payment intent: ${(error as Error).message}`, 'stripe-service');
@@ -81,6 +99,9 @@ export async function confirmPaymentIntent(paymentIntentId: string, paymentMetho
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
     return await stripe.paymentIntents.confirm(paymentIntentId, {
       payment_method: paymentMethodId,
     });
@@ -100,6 +121,9 @@ export async function cancelPaymentIntent(paymentIntentId: string): Promise<Stri
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
     return await stripe.paymentIntents.cancel(paymentIntentId);
   } catch (error) {
     log(`Failed to cancel payment intent: ${(error as Error).message}`, 'stripe-service');
@@ -118,6 +142,10 @@ export async function createRefund(paymentIntentId: string, amount?: number): Pr
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
+    
     const refundData: Stripe.RefundCreateParams = {
       payment_intent: paymentIntentId,
     };
@@ -173,6 +201,9 @@ export async function createPaymentMethod(token: string): Promise<Stripe.Payment
   }
 
   try {
+    if (!stripe) {
+      throw new Error('Stripe is not initialized');
+    }
     return await stripe.paymentMethods.create({
       type: 'card',
       card: {

@@ -407,17 +407,20 @@ export async function initializeStorage(): Promise<IStorage> {
       if (dbReady) {
         console.log('PostgreSQL database initialized successfully');
         activeStorage = pgStorage;
+        console.log('Using PostgreSQL storage (PgStorage)');
       } else {
         console.warn('Failed to initialize PostgreSQL database, falling back to in-memory storage');
         activeStorage = memStorage;
+        console.log('Using in-memory storage (MemStorage)');
       }
     } catch (error) {
       console.error('Error initializing PostgreSQL database:', error);
       console.warn('Falling back to in-memory storage');
       activeStorage = memStorage;
+      console.log('Using in-memory storage (MemStorage) due to error');
     }
   } else {
-    console.log('Using in-memory storage');
+    console.log('Using in-memory storage (MemStorage) - no DATABASE_URL provided');
     activeStorage = memStorage;
   }
   
