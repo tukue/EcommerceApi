@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   return (
     <div className={cn("flex flex-col w-64 bg-neutral-900 dark:bg-gray-900 text-white", className)}>
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-700 dark:border-gray-800">
-        <h1 className="text-xl font-bold">MicroStore Admin</h1>
+        <h1 className="text-xl font-bold">Service Catalog</h1>
       </div>
       <div className="flex flex-col flex-grow overflow-y-auto">
         <nav className="flex-1 px-2 py-4 space-y-1">

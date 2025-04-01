@@ -23,8 +23,8 @@ const Dashboard: React.FC = () => {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Microservices Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">Monitor and manage your e-commerce platform services</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Service Catalog</h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Monitor and manage your e-commerce platform services</p>
       </div>
 
       {/* System Status Cards */}
