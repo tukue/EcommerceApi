@@ -21,14 +21,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     return cn(
       "flex items-center px-4 py-2 text-sm font-medium rounded-md",
       isActive(path) 
-        ? "bg-gray-800 text-white" 
-        : "text-white hover:bg-gray-700"
+        ? "bg-primary text-primary-foreground" 
+        : "text-white hover:bg-gray-700 dark:hover:bg-gray-800"
     );
   };
 
   return (
-    <div className={cn("flex flex-col w-64 bg-neutral-dark text-white", className)}>
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-700">
+    <div className={cn("flex flex-col w-64 bg-neutral-900 dark:bg-gray-900 text-white", className)}>
+      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-700 dark:border-gray-800">
         <h1 className="text-xl font-bold">MicroStore Admin</h1>
       </div>
       <div className="flex flex-col flex-grow overflow-y-auto">
@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             Dashboard
           </Link>
           <div className="py-2">
-            <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
               Microservices
             </h3>
             <div className="mt-2 space-y-1">
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             </div>
           </div>
           <div className="py-2">
-            <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
               Infrastructure
             </h3>
             <div className="mt-2 space-y-1">
@@ -93,12 +93,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           </div>
         </nav>
       </div>
-      <div className="flex-shrink-0 flex border-t border-gray-700 p-4">
+      <div className="flex-shrink-0 flex border-t border-gray-700 dark:border-gray-800 p-4">
         <div className="flex-shrink-0 w-full group block">
           <div className="flex items-center">
             <div className="ml-3">
               <p className="text-sm font-medium text-white">Admin User</p>
-              <p className="text-xs font-medium text-gray-400">admin@microstore.com</p>
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-300">admin@microstore.com</p>
             </div>
           </div>
         </div>

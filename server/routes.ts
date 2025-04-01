@@ -1,7 +1,19 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import session from "express-session";
+
+// Extend Express session types to include user
+declare module 'express-session' {
+  interface SessionData {
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      isAdmin: boolean;
+    };
+  }
+}
 
 // Import services
 import * as productService from "./services/product-service";
@@ -9,7 +21,11 @@ import * as userService from "./services/user-service";
 import * as cartService from "./services/cart-service";
 import * as orderService from "./services/order-service";
 import * as paymentService from "./services/payment-service";
+import * as notificationService from "./services/notification-service";
 import * as gatewayService from "./services/gateway";
+
+// Import service integration
+import { ServiceRegistry, services } from './integration';
 
 // Import types and schemas
 import { 
@@ -18,7 +34,8 @@ import {
   insertCartItemSchema,
   OrderStatus,
   PaymentStatus,
-  ServiceStatus
+  ServiceStatus,
+  User
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -84,8 +101,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
-      // Store user in session
-      req.session.user = user;
+      // Store user in session (ensure non-null isAdmin)
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin ?? false
+      };
       
       res.json({ user });
     } catch (error) {
@@ -219,15 +241,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      const cart = await cartService.getCartByUserId(req.session.user.id);
+      // Ensure cart exists
+      const userCart = await cartService.getCartByUserId(req.session.user.id);
       
-      if (!cart) {
+      if (!userCart) {
         // Create a new cart if one doesn't exist
         const newCart = await cartService.createCart({ userId: req.session.user.id });
         return res.json(await cartService.getCartWithItems(newCart.id));
       }
       
-      const cartWithItems = await cartService.getCartWithItems(cart.id);
+      const cartWithItems = await cartService.getCartWithItems(userCart.id);
       res.json(cartWithItems);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -242,14 +265,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { productId, quantity } = insertCartItemSchema.parse(req.body);
       
+      // Ensure cart exists
+      const userCart = await cartService.getCartByUserId(req.session.user.id);
+      const cartId = userCart ? userCart.id : 
+                    (await cartService.createCart({ userId: req.session.user.id })).id;
+      
       const cartItem = await cartService.addItemToCart(
-        req.session.user.id,
+        cartId,
         productId,
         quantity
       );
       
-      const cart = await cartService.getCartByUserId(req.session.user.id);
-      const cartWithItems = await cartService.getCartWithItems(cart!.id);
+      // Get the latest cart state
+      const cartWithItems = await cartService.getCartWithItems(cartId);
       
       res.status(201).json(cartWithItems);
     } catch (error) {
@@ -279,8 +307,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Cart item not found" });
       }
       
-      const cart = await cartService.getCartByUserId(req.session.user.id);
-      const cartWithItems = await cartService.getCartWithItems(cart!.id);
+      const userCart = await cartService.getCartByUserId(req.session.user.id);
+      if (!userCart) {
+        return res.status(404).json({ error: "Cart not found" });
+      }
+      const cartWithItems = await cartService.getCartWithItems(userCart.id);
       
       res.json(cartWithItems);
     } catch (error) {
@@ -301,8 +332,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Cart item not found" });
       }
       
-      const cart = await cartService.getCartByUserId(req.session.user.id);
-      const cartWithItems = await cartService.getCartWithItems(cart!.id);
+      const userCart = await cartService.getCartByUserId(req.session.user.id);
+      if (!userCart) {
+        return res.status(404).json({ error: "Cart not found" });
+      }
+      const cartWithItems = await cartService.getCartWithItems(userCart.id);
       
       res.json(cartWithItems);
     } catch (error) {
@@ -472,6 +506,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(payment);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // Notification Service Routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const notifications = await notificationService.getUserNotifications(req.session.user.id);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post("/api/notifications/send", async (req, res) => {
+    try {
+      if (!req.session.user || !req.session.user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { recipientId, type, subject, message, metadata } = req.body;
+      
+      if (!recipientId || !type || !subject || !message) {
+        return res.status(400).json({ error: "Required fields missing" });
+      }
+      
+      const notification = await notificationService.sendNotification({
+        recipientId,
+        type,
+        subject,
+        message,
+        metadata
+      });
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+  
+  // Configure email notifications settings
+  app.put("/api/notifications/config/email", async (req, res) => {
+    try {
+      if (!req.session.user || !req.session.user.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const { defaultRecipient, enabled, from } = req.body;
+      
+      // Build a config object with only provided values
+      const configUpdate: Record<string, any> = {};
+      if (defaultRecipient !== undefined) configUpdate.defaultRecipient = defaultRecipient;
+      if (enabled !== undefined) configUpdate.enabled = Boolean(enabled);
+      if (from !== undefined) configUpdate.from = from;
+      
+      // Update email configuration
+      notificationService.configureEmailSettings(configUpdate);
+      
+      res.json({ success: true, message: "Email configuration updated" });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // Service health check endpoints
+  app.get("/api/users/health", (req, res) => {
+    res.json({ status: "healthy", service: "user-service" });
+  });
+  
+  app.get("/api/products/health", (req, res) => {
+    res.json({ status: "healthy", service: "product-service" });
+  });
+  
+  app.get("/api/cart/health", (req, res) => {
+    res.json({ status: "healthy", service: "cart-service" });
+  });
+  
+  app.get("/api/orders/health", (req, res) => {
+    res.json({ status: "healthy", service: "order-service" });
+  });
+  
+  app.get("/api/payments/health", (req, res) => {
+    res.json({ status: "healthy", service: "payment-service" });
+  });
+  
+  app.get("/api/notifications/health", (req, res) => {
+    res.json({ status: "healthy", service: "notification-service" });
+  });
+
+  // Initialize service registry for inter-service communication
+  const registry = ServiceRegistry.getInstance();
+  
+  // Service health monitoring endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      const serviceHealth = await services.checkServicesHealth();
+      res.json({
+        status: "healthy",
+        services: serviceHealth
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        status: "error",
+        message: (error as Error).message
+      });
     }
   });
 

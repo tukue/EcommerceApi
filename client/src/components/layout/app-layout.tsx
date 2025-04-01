@@ -29,7 +29,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, className }) => {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header onMobileMenuClick={toggleMobileMenu} />
         
-        <main className={cn("flex-1 overflow-y-auto bg-gray-100 p-6", className)}>
+        <main className={cn("flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-950 p-6", className)}>
           {children}
         </main>
       </div>

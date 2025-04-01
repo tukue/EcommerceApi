@@ -1,8 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeStorage } from "./storage";
+import { initializeStorage, storage } from "./storage";
 import { setupDatabase } from "./database.js";
+import { ServiceRegistry } from "./integration/service-registry";
+import { ServiceStatus } from "@shared/schema";
 
 const app = express();
 app.use(express.json());
@@ -50,6 +52,26 @@ app.use((req, res, next) => {
 
   log("Initializing storage...");
   await initializeStorage();
+  
+  // Initialize service registry
+  log("Initializing service registry...");
+  const registry = ServiceRegistry.getInstance();
+  
+  // Initialize service statuses
+  log("Initializing service statuses...");
+  try {
+    await storage.updateServiceStatus("user-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("product-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("cart-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("order-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("payment-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("notification-service", ServiceStatus.HEALTHY, "Service is operating normally");
+    await storage.updateServiceStatus("api-gateway", ServiceStatus.HEALTHY, "Service is operating normally");
+    log("Services initialized successfully");
+  } catch (error) {
+    log("Error initializing services: " + (error as Error).message);
+    // Continue even if service initialization fails
+  }
   
   log("Setting up routes...");
   const server = await registerRoutes(app);
