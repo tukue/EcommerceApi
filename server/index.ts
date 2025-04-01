@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeStorage } from "./storage";
+import { setupDatabase } from "./database.js";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +39,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  log("Initializing database...");
+  try {
+    await setupDatabase();
+    log("Database setup successful");
+  } catch (error) {
+    log("Database setup failed: " + (error as Error).message);
+    // Continue even if database setup fails, as we'll fallback to MemStorage
+  }
+
+  log("Initializing storage...");
+  await initializeStorage();
+  
+  log("Setting up routes...");
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

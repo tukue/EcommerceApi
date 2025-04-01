@@ -383,5 +383,46 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Create and export a singleton instance
-export const storage = new MemStorage();
+// Import PostgreSQL storage
+import { PgStorage } from './pg-storage';
+import { setupDatabase } from './database';
+
+// Create storage instances
+const memStorage = new MemStorage();
+const pgStorage = new PgStorage();
+
+// Determine which storage to use based on environment
+let activeStorage: IStorage = memStorage;
+
+// Function to initialize database and switch to PostgreSQL storage
+export async function initializeStorage(): Promise<IStorage> {
+  // Check if we should use the database (default to true if DATABASE_URL is set)
+  const useDatabase = !!process.env.DATABASE_URL;
+  
+  if (useDatabase) {
+    try {
+      // Initialize the database
+      const dbReady = await setupDatabase();
+      
+      if (dbReady) {
+        console.log('PostgreSQL database initialized successfully');
+        activeStorage = pgStorage;
+      } else {
+        console.warn('Failed to initialize PostgreSQL database, falling back to in-memory storage');
+        activeStorage = memStorage;
+      }
+    } catch (error) {
+      console.error('Error initializing PostgreSQL database:', error);
+      console.warn('Falling back to in-memory storage');
+      activeStorage = memStorage;
+    }
+  } else {
+    console.log('Using in-memory storage');
+    activeStorage = memStorage;
+  }
+  
+  return activeStorage;
+}
+
+// Export the active storage instance
+export const storage = activeStorage;
