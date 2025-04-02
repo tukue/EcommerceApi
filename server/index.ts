@@ -6,12 +6,23 @@ import { setupDatabase } from "./database.js";
 import { ServiceRegistry } from "./integration/service-registry";
 import { ServiceStatus } from "@shared/schema";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsDoc from "swagger-jsdoc";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: "Too many requests, please try again later." },
+});
+
+app.use("/api/", limiter);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -42,6 +53,20 @@ app.use((req, res, next) => {
 
   next();
 });
+
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "E-Commerce API",
+      version: "1.0.0",
+    },
+  },
+  apis: ["./server/routes.ts"], // Path to your API route definitions
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 (async () => {
   log("Initializing database...");

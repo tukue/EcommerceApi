@@ -39,6 +39,11 @@ import {
   User
 } from "@shared/schema";
 
+const addItemSchema = z.object({
+  productId: z.number().positive(),
+  quantity: z.number().min(1),
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up session
   app.use(
@@ -88,50 +93,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Service Routes
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ error: "Username and password are required" });
-      }
-      
-      const user = await userService.authenticateUser(username, password);
-      
-      if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-      
-      // Store user in session (ensure non-null isAdmin)
-      req.session.user = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        isAdmin: user.isAdmin ?? false
-      };
-      
-      res.json({ user });
-    } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ error: "Failed to logout" });
-      }
-      res.json({ success: true });
-    });
-  });
-
-  app.get("/api/auth/me", (req, res) => {
-    if (!req.session.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    res.json({ user: req.session.user });
-  });
-
+  /**
+   * @swagger
+   * /api/users:
+   *   get:
+   *     summary: Retrieve a list of users
+   *     tags:
+   *       - User Service
+   *     responses:
+   *       200:
+   *         description: A list of users
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/User'
+   */
   app.get("/api/users", async (req, res) => {
     try {
       const users = await userService.getUsers();
@@ -141,6 +119,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/users/{id}:
+   *   get:
+   *     summary: Retrieve a user by ID
+   *     tags:
+   *       - User Service
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: The ID of the user
+   *     responses:
+   *       200:
+   *         description: A user object
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/User'
+   *       404:
+   *         description: User not found
+   */
   app.get("/api/users/:id", async (req, res) => {
     try {
       const user = await userService.getUser(Number(req.params.id));
@@ -167,6 +169,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Service Routes
+  /**
+   * @swagger
+   * /api/products:
+   *   get:
+   *     summary: Retrieve a list of products
+   *     tags:
+   *       - Product Service
+   *     responses:
+   *       200:
+   *         description: A list of products
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/Product'
+   */
   app.get("/api/products", async (req, res) => {
     try {
       const products = await productService.getProducts();
@@ -176,6 +195,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/products/{id}:
+   *   get:
+   *     summary: Retrieve a product by ID
+   *     tags:
+   *       - Product Service
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: The ID of the product
+   *     responses:
+   *       200:
+   *         description: A product object
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Product'
+   *       404:
+   *         description: Product not found
+   */
   app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await productService.getProduct(Number(req.params.id));
@@ -236,6 +279,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart Service Routes
+  /**
+   * @swagger
+   * /api/cart:
+   *   get:
+   *     summary: Retrieve the current user's cart
+   *     tags:
+   *       - Cart Service
+   *     responses:
+   *       200:
+   *         description: The user's cart
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Cart'
+   *       401:
+   *         description: Not authenticated
+   */
   app.get("/api/cart", async (req, res) => {
     try {
       if (!req.session.user) {
@@ -264,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      const { productId, quantity } = insertCartItemSchema.parse(req.body);
+      const { productId, quantity } = addItemSchema.parse(req.body);
       
       // Ensure cart exists
       const userCart = await cartService.getCartByUserId(req.session.user.id);
@@ -647,11 +707,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/payments/health", (req, res) => {
-    const isHealthy = isStripeConfigured();
-    if (isHealthy) {
-      res.json({ status: "healthy", service: "payment-service" });
-    } else {
-      res.status(500).json({ status: "error", service: "payment-service", message: "Stripe is not configured" });
+    try {
+      const isHealthy = isStripeConfigured();
+      if (isHealthy) {
+        res.json({ status: "healthy", service: "payment-service" });
+      } else {
+        res.status(500).json({ status: "error", service: "payment-service", message: "Stripe is not configured" });
+      }
+    } catch (error) {
+      res.status(500).json({ status: "error", message: (error as Error).message });
     }
   });
   
