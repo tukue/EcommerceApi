@@ -9,6 +9,7 @@ export * from './payment-service-client';
 export * from './notification-service-client';
 export * from './api-gateway-client';
 
+export { isStripeConfigured } from '../services/stripe-service';
 // ServiceManager - main entry point for service integration
 import { ServiceRegistry } from './service-registry';
 import { UserServiceClient } from './user-service-client';

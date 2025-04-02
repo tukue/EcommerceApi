@@ -5,6 +5,9 @@ import { initializeStorage, storage } from "./storage";
 import { setupDatabase } from "./database.js";
 import { ServiceRegistry } from "./integration/service-registry";
 import { ServiceStatus } from "@shared/schema";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());

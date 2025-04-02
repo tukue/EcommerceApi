@@ -25,7 +25,7 @@ import * as notificationService from "./services/notification-service";
 import * as gatewayService from "./services/gateway";
 
 // Import service integration
-import { ServiceRegistry, services } from './integration';
+import { isStripeConfigured, ServiceRegistry, services } from './integration';
 
 // Import types and schemas
 import { 
@@ -591,7 +591,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/payments/health", (req, res) => {
-    res.json({ status: "healthy", service: "payment-service" });
+    const isHealthy = isStripeConfigured();
+    if (isHealthy) {
+      res.json({ status: "healthy", service: "payment-service" });
+    } else {
+      res.status(500).json({ status: "error", service: "payment-service", message: "Stripe is not configured" });
+    }
   });
   
   app.get("/api/notifications/health", (req, res) => {
