@@ -5,4 +5,6 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env 
-database.ts
+database.ts 
+# Add this line to .gitignore
+server/test-db.js
