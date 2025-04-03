@@ -56,6 +56,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // API Gateway Routes
+
+  /**
+   * @swagger
+   * /api/services/status:
+   *   get:
+   *     summary: Retrieve the status of all services
+   *     tags:
+   *       - API Gateway
+   *     responses:
+   *       200:
+   *         description: A list of service statuses
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/ServiceStatus'
+   */
   app.get("/api/services/status", async (req, res) => {
     try {
       const statuses = await gatewayService.getServiceStatuses();
@@ -65,6 +83,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/gateway/metrics:
+   *   get:
+   *     summary: Retrieve system metrics
+   *     tags:
+   *       - API Gateway
+   *     responses:
+   *       200:
+   *         description: System metrics
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SystemMetrics'
+   */
   app.get("/api/gateway/metrics", async (req, res) => {
     try {
       const metrics = await gatewayService.getSystemMetrics();
@@ -93,6 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Service Routes
+
   /**
    * @swagger
    * /api/users:
@@ -169,6 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product Service Routes
+
   /**
    * @swagger
    * /api/products:
@@ -651,6 +686,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Required fields missing" });
       }
       
+      /**
+       * @swagger
+       * /api/notifications/send:
+       *   post:
+       *     summary: Send a notification to a user
+       *     tags:
+       *       - Notification Service
+       *     requestBody:
+       *       required: true
+       *       content:
+       *         application/json:
+       *           schema:
+       *             type: object
+       *             properties:
+       *               recipientId:
+       *                 type: integer
+       *                 description: The ID of the recipient
+       *               type:
+       *                 type: string
+       *                 description: The type of notification
+       *               subject:
+       *                 type: string
+       *                 description: The subject of the notification
+       *               message:
+       *                 type: string
+       *                 description: The message content
+       *               metadata:
+       *                 type: object
+       *                 description: Additional metadata for the notification
+       *     responses:
+       *       201:
+       *         description: Notification sent successfully
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *               properties:
+       *                 id:
+       *                   type: integer
+       *                   description: The ID of the notification
+       *                 recipientId:
+       *                   type: integer
+       *                   description: The ID of the recipient
+       *                 type:
+       *                   type: string
+       *                   description: The type of notification
+       *                 subject:
+       *                   type: string
+       *                   description: The subject of the notification
+       *                 message:
+       *                   type: string
+       *                   description: The message content
+       *                 metadata:
+       *                   type: object
+       *                   description: Additional metadata for the notification
+       *       400:
+       *         description: Bad request, missing or invalid fields
+       *       403:
+       *         description: Admin access required
+       *       500:
+       *         description: Internal server error
+       */
       const notification = await notificationService.sendNotification({
         recipientId,
         type,
@@ -665,7 +762,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Configure email notifications settings
+  /**
+   * @swagger
+   * /api/notifications/config/email:
+   *   put:
+   *     summary: Update email notification settings
+   *     tags:
+   *       - Notification Service
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               defaultRecipient:
+   *                 type: string
+   *                 description: Default recipient email address
+   *               enabled:
+   *                 type: boolean
+   *                 description: Whether email notifications are enabled
+   *               from:
+   *                 type: string
+   *                 description: Sender email address
+   *     responses:
+   *       200:
+   *         description: Email configuration updated successfully
+   *       403:
+   *         description: Admin access required
+   *       500:
+   *         description: Internal server error
+   */
   app.put("/api/notifications/config/email", async (req, res) => {
     try {
       if (!req.session.user || !req.session.user.isAdmin) {
@@ -674,13 +801,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { defaultRecipient, enabled, from } = req.body;
       
-      // Build a config object with only provided values
       const configUpdate: Record<string, any> = {};
       if (defaultRecipient !== undefined) configUpdate.defaultRecipient = defaultRecipient;
       if (enabled !== undefined) configUpdate.enabled = Boolean(enabled);
       if (from !== undefined) configUpdate.from = from;
       
-      // Update email configuration
       notificationService.configureEmailSettings(configUpdate);
       
       res.json({ success: true, message: "Email configuration updated" });
@@ -689,23 +814,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Service health check endpoints
+  /**
+   * @swagger
+   * /api/users/health:
+   *   get:
+   *     summary: Check health of the user service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: User service is healthy
+   */
   app.get("/api/users/health", (req, res) => {
     res.json({ status: "healthy", service: "user-service" });
   });
-  
+
+  /**
+   * @swagger
+   * /api/products/health:
+   *   get:
+   *     summary: Check health of the product service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: Product service is healthy
+   */
   app.get("/api/products/health", (req, res) => {
     res.json({ status: "healthy", service: "product-service" });
   });
-  
+
+  /**
+   * @swagger
+   * /api/cart/health:
+   *   get:
+   *     summary: Check health of the cart service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: Cart service is healthy
+   */
   app.get("/api/cart/health", (req, res) => {
     res.json({ status: "healthy", service: "cart-service" });
   });
-  
+
+  /**
+   * @swagger
+   * /api/orders/health:
+   *   get:
+   *     summary: Check health of the order service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: Order service is healthy
+   */
   app.get("/api/orders/health", (req, res) => {
     res.json({ status: "healthy", service: "order-service" });
   });
-  
+
+  /**
+   * @swagger
+   * /api/payments/health:
+   *   get:
+   *     summary: Check health of the payment service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: Payment service is healthy
+   *       500:
+   *         description: Payment service is not configured
+   */
   app.get("/api/payments/health", (req, res) => {
     try {
       const isHealthy = isStripeConfigured();
@@ -718,15 +899,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: "error", message: (error as Error).message });
     }
   });
-  
+
+  /**
+   * @swagger
+   * /api/notifications/health:
+   *   get:
+   *     summary: Check health of the notification service
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: Notification service is healthy
+   */
   app.get("/api/notifications/health", (req, res) => {
     res.json({ status: "healthy", service: "notification-service" });
   });
 
-  // Initialize service registry for inter-service communication
-  const registry = ServiceRegistry.getInstance();
-  
-  // Service health monitoring endpoint
+  /**
+   * @swagger
+   * /api/health:
+   *   get:
+   *     summary: Check health of all services
+   *     tags:
+   *       - Health Check
+   *     responses:
+   *       200:
+   *         description: All services are healthy
+   *       500:
+   *         description: One or more services are unhealthy
+   */
   app.get("/api/health", async (req, res) => {
     try {
       const serviceHealth = await services.checkServicesHealth();
@@ -744,4 +945,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
-}

@@ -60,6 +60,53 @@ const swaggerOptions = {
     info: {
       title: "E-Commerce API",
       version: "1.0.0",
+      description: "API documentation for the E-Commerce platform",
+    },
+    components: {
+      schemas: {
+        ServiceStatus: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Name of the service" },
+            status: {
+              type: "string",
+              enum: ["healthy", "warning", "error"],
+              description: "Health status of the service",
+            },
+            details: { type: "string", description: "Additional details about the service" },
+            lastUpdated: { type: "string", format: "date-time", description: "Last updated timestamp" },
+          },
+        },
+        SystemMetrics: {
+          type: "object",
+          properties: {
+            orders: {
+              type: "object",
+              properties: {
+                count: { type: "integer", description: "Total number of orders" },
+                change: { type: "number", description: "Percentage change in orders" },
+                period: { type: "string", description: "Time period for the metrics" },
+              },
+            },
+            users: {
+              type: "object",
+              properties: {
+                count: { type: "integer", description: "Total number of users" },
+                change: { type: "number", description: "Percentage change in users" },
+                period: { type: "string", description: "Time period for the metrics" },
+              },
+            },
+            revenue: {
+              type: "object",
+              properties: {
+                amount: { type: "number", description: "Total revenue" },
+                change: { type: "number", description: "Percentage change in revenue" },
+                period: { type: "string", description: "Time period for the metrics" },
+              },
+            },
+          },
+        },
+      },
     },
   },
   apis: ["./server/routes.ts"], // Path to your API route definitions
