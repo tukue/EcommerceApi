@@ -933,15 +933,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceHealth = await services.checkServicesHealth();
       res.json({
         status: "healthy",
-        services: serviceHealth
+        services: serviceHealth,
       });
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
-        message: (error as Error).message
+        message: (error as Error).message,
       });
     }
   });
 
   const httpServer = createServer(app);
   return httpServer;
+}
