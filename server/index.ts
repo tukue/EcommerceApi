@@ -106,6 +106,18 @@ const swaggerOptions = {
             },
           },
         },
+        Product: {
+          type: "object",
+          properties: {
+            id: { type: "integer", description: "The unique identifier for a product" },
+            name: { type: "string", description: "The name of the product" },
+            description: { type: "string", description: "The description of the product" },
+            price: { type: "number", description: "The price of the product" },
+            category: { type: "string", description: "The category of the product" },
+            inventory: { type: "integer", description: "The inventory count of the product" },
+            imageUrl: { type: "string", description: "The URL of the product image" },
+          },
+        },
       },
     },
   },
