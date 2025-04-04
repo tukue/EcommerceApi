@@ -21,6 +21,47 @@ import { NotificationServiceClient } from './notification-service-client';
 import { ApiGatewayClient } from './api-gateway-client';
 import { log } from '../vite';
 
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "E-Commerce API",
+      version: "1.0.0",
+      description: "API documentation for the E-Commerce platform",
+    },
+    components: {
+      schemas: {
+        Order: {
+          type: "object",
+          properties: {
+            id: { type: "integer", description: "The unique identifier for the order" },
+            userId: { type: "integer", description: "The ID of the user who placed the order" },
+            status: {
+              type: "string",
+              enum: ["pending", "processing", "shipped", "delivered", "completed", "cancelled"],
+              description: "The status of the order",
+            },
+            total: { type: "number", description: "The total amount for the order" },
+            shippingAddress: { type: "string", description: "The shipping address for the order" },
+            createdAt: { type: "string", format: "date-time", description: "The date and time the order was created" },
+          },
+        },
+        OrderItem: {
+          type: "object",
+          properties: {
+            id: { type: "integer", description: "The unique identifier for the order item" },
+            orderId: { type: "integer", description: "The ID of the order this item belongs to" },
+            productId: { type: "integer", description: "The ID of the product" },
+            quantity: { type: "integer", description: "The quantity of the product" },
+            price: { type: "number", description: "The price of the product" },
+          },
+        },
+      },
+    },
+  },
+  apis: ["./server/routes.ts"], // Path to your API route definitions
+};
+
 /**
  * Service Manager - manages service clients
  */
