@@ -38,6 +38,14 @@ export class PgStorage implements IStorage {
     return results as User[];
   }
 
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0] as User;
+  }
+
   // Product Service
   async getProduct(id: number): Promise<Product | undefined> {
     const results = await db.select().from(products).where(eq(products.id, id)).limit(1);
@@ -64,7 +72,7 @@ export class PgStorage implements IStorage {
 
   async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
     const values: any = {};
-    
+
     if (product.name !== undefined) values.name = product.name;
     if (product.description !== undefined) values.description = product.description;
     if (product.price !== undefined) values.price = product.price;
@@ -72,12 +80,12 @@ export class PgStorage implements IStorage {
     if (product.sku !== undefined) values.sku = product.sku;
     if (product.inventory !== undefined) values.inventory = product.inventory;
     if (product.category !== undefined) values.category = product.category;
-    
+
     const result = await db.update(products)
       .set(values)
       .where(eq(products.id, id))
       .returning();
-    
+
     return result[0] as Product;
   }
 
@@ -123,7 +131,7 @@ export class PgStorage implements IStorage {
       .set({ quantity })
       .where(eq(cartItems.id, id))
       .returning();
-    
+
     return result[0] as CartItem;
   }
 
@@ -150,7 +158,7 @@ export class PgStorage implements IStorage {
     const results = await db.select().from(orders)
       .where(eq(orders.userId, userId))
       .orderBy(desc(orders.createdAt));
-    
+
     return results.map((order: any) => ({
       ...order,
       status: validateOrderStatus(order.status)
@@ -175,9 +183,9 @@ export class PgStorage implements IStorage {
       .set({ status })
       .where(eq(orders.id, id))
       .returning();
-    
+
     if (result.length === 0) return undefined;
-    
+
     return {
       ...result[0],
       status: validateOrderStatus(result[0].status)
@@ -202,9 +210,9 @@ export class PgStorage implements IStorage {
   // Payment Service
   async getPayment(id: number): Promise<Payment | undefined> {
     const results = await db.select().from(payments).where(eq(payments.id, id)).limit(1);
-    
+
     if (results.length === 0) return undefined;
-    
+
     return {
       ...results[0],
       status: validatePaymentStatus(results[0].status)
@@ -213,9 +221,9 @@ export class PgStorage implements IStorage {
 
   async getPaymentByOrderId(orderId: number): Promise<Payment | undefined> {
     const results = await db.select().from(payments).where(eq(payments.orderId, orderId)).limit(1);
-    
+
     if (results.length === 0) return undefined;
-    
+
     return {
       ...results[0],
       status: validatePaymentStatus(results[0].status)
@@ -230,7 +238,7 @@ export class PgStorage implements IStorage {
       paymentMethod: payment.paymentMethod,
       transactionId: payment.transactionId || null
     }).returning();
-    
+
     return {
       ...result[0],
       status: validatePaymentStatus(result[0].status)
@@ -242,9 +250,9 @@ export class PgStorage implements IStorage {
       .set({ status })
       .where(eq(payments.id, id))
       .returning();
-    
+
     if (result.length === 0) return undefined;
-    
+
     return {
       ...result[0],
       status: validatePaymentStatus(result[0].status)
@@ -254,9 +262,9 @@ export class PgStorage implements IStorage {
   // Service Status
   async getServiceStatus(name: string): Promise<ServiceStatus | undefined> {
     const results = await db.select().from(serviceStatuses).where(eq(serviceStatuses.name, name)).limit(1);
-    
+
     if (results.length === 0) return undefined;
-    
+
     return dbToServiceStatus(results[0] as DbServiceStatus);
   }
 
@@ -268,18 +276,18 @@ export class PgStorage implements IStorage {
   async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatus> {
     // Try to update first
     const updateResult = await db.update(serviceStatuses)
-      .set({ 
+      .set({
         status: status as string,
         details: details || null,
         lastUpdated: new Date()
       })
       .where(eq(serviceStatuses.name, name))
       .returning();
-    
+
     if (updateResult.length > 0) {
       return dbToServiceStatus(updateResult[0] as DbServiceStatus);
     }
-    
+
     // If update didn't affect any rows, insert a new record
     const insertResult = await db.insert(serviceStatuses)
       .values({
@@ -288,7 +296,7 @@ export class PgStorage implements IStorage {
         details: details || null
       })
       .returning();
-    
+
     return dbToServiceStatus(insertResult[0] as DbServiceStatus);
   }
 }

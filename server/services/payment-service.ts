@@ -41,7 +41,7 @@ export async function createPayment(payment: InsertPayment): Promise<Payment> {
  * @param status - New status
  */
 export async function updatePaymentStatus(
-  id: number, 
+  id: number,
   status: PaymentStatus
 ): Promise<Payment | undefined> {
   return storage.updatePaymentStatus(id, status);
@@ -82,7 +82,7 @@ export async function processPayment(
     };
 
     const payment = await createPayment(paymentData);
-    
+
     // Handle different payment methods
     if (paymentMethod === 'stripe') {
       // Only try to process Stripe if it's configured
@@ -95,16 +95,16 @@ export async function processPayment(
             'usd',
             { orderId: orderId.toString() }
           );
-          
+
           // Update payment status to pending
           await storage.updatePaymentStatus(payment.id, PaymentStatus.PENDING);
-          
-          // In a real implementation with proper updatePayment method, 
+
+          // In a real implementation with proper updatePayment method,
           // we would also update the transaction ID in a separate field
-          
+
           // Note: In a real implementation, we would handle webhooks from Stripe
           // to update the payment status when the payment is completed
-          
+
           // For demo purposes, we'll just update the status to completed
           if (mockSuccess) {
             // Update payment with new status
@@ -143,7 +143,7 @@ export async function processPayment(
     // If payment was successful, update order status
     if (updatedPayment.status === PaymentStatus.COMPLETED) {
       await orderService.updateOrderStatus(orderId, OrderStatus.PROCESSING);
-      
+
       // Send payment confirmation notification
       await notificationService.sendPaymentConfirmation(
         user.id,
@@ -223,18 +223,18 @@ export async function createStripeCheckoutSession(
     // This would normally call the Stripe API to create a checkout session
     // For now, we'll return a mock session ID since we don't have valid API keys yet
     const sessionId = `mock_cs_${Date.now()}`;
-    
+
     // First update the payment status
     await storage.updatePaymentStatus(payment.id, PaymentStatus.PENDING);
-    
-    // We need a way to store the transaction ID - in a real implementation, 
+
+    // We need a way to store the transaction ID - in a real implementation,
     // we would update the payment with the transaction ID in a separate operation
 
     return { sessionId };
   } catch (error) {
     // Update payment status to failed
     await storage.updatePaymentStatus(payment.id, PaymentStatus.FAILED);
-    
+
     log(`Failed to create Stripe checkout session: ${(error as Error).message}`, 'payment-service');
     throw new Error(`Failed to create checkout session: ${(error as Error).message}`);
   }
@@ -314,4 +314,18 @@ export async function processRefund(
  */
 export function getStripePublishableKey(): string {
   return stripeService.getPublishableKey();
+}
+
+/**
+ * Check health of the payment service
+ * @returns true if the service is healthy, false otherwise
+ */
+export async function checkHealth(): Promise<boolean> {
+  try {
+    // Simple check to see if we can access the storage
+    await storage.getPayment(1);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }

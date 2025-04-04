@@ -10,8 +10,80 @@ export const validateProductUpdate = (data: unknown) => {
   return insertProductSchema.partial().parse(data);
 };
 
-export const getProducts = async (): Promise<Product[]> => {
-  return await storage.getProducts();
+export interface ProductFilter {
+  search?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  sortBy?: 'price' | 'name' | 'category';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export const getProducts = async (filters?: ProductFilter): Promise<Product[]> => {
+  const products = await storage.getProducts();
+
+  if (!filters) {
+    return products;
+  }
+
+  let filteredProducts = [...products];
+
+  // Apply search filter
+  if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
+    filteredProducts = filteredProducts.filter(product =>
+      product.name.toLowerCase().includes(searchTerm) ||
+      (product.description && product.description.toLowerCase().includes(searchTerm)) ||
+      (product.category && product.category.toLowerCase().includes(searchTerm))
+    );
+  }
+
+  // Apply category filter
+  if (filters.category) {
+    filteredProducts = filteredProducts.filter(product =>
+      product.category && product.category.toLowerCase() === filters.category!.toLowerCase()
+    );
+  }
+
+  // Apply price range filters
+  if (filters.minPrice !== undefined) {
+    filteredProducts = filteredProducts.filter(product => product.price >= filters.minPrice!);
+  }
+
+  if (filters.maxPrice !== undefined) {
+    filteredProducts = filteredProducts.filter(product => product.price <= filters.maxPrice!);
+  }
+
+  // Apply in-stock filter
+  if (filters.inStock !== undefined) {
+    filteredProducts = filteredProducts.filter(product =>
+      filters.inStock ? (product.inventory && product.inventory > 0) : true
+    );
+  }
+
+  // Apply sorting
+  if (filters.sortBy) {
+    filteredProducts.sort((a, b) => {
+      let comparison = 0;
+
+      switch (filters.sortBy) {
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'category':
+          comparison = (a.category || '').localeCompare(b.category || '');
+          break;
+      }
+
+      return filters.sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }
+
+  return filteredProducts;
 };
 
 export const getProduct = async (id: number): Promise<Product | undefined> => {

@@ -65,13 +65,13 @@ const sendEmail = async (to: string, subject: string, text: string): Promise<boo
       log('Email notifications are disabled', 'notification-service');
       return false;
     }
-    
+
     // If no specific recipient is provided, use the default one
     const recipient = to || emailConfig.defaultRecipient;
-    
+
     // For demonstration, we'll log instead of actually sending
     log(`Would send email to ${recipient}: ${subject}`, 'notification-service');
-    
+
     // In production, you would uncomment the following code:
     /*
     const transporter = createTransporter();
@@ -83,7 +83,7 @@ const sendEmail = async (to: string, subject: string, text: string): Promise<boo
     });
     log(`Email sent: ${info.messageId}`, 'notification-service');
     */
-    
+
     return true;
   } catch (error) {
     log(`Failed to send email: ${(error as Error).message}`, 'notification-service');
@@ -95,7 +95,7 @@ const sendEmail = async (to: string, subject: string, text: string): Promise<boo
 const addNotification = async (notification: NotificationRequest): Promise<Notification> => {
   const now = new Date();
   let status: 'pending' | 'sent' | 'failed' = 'pending';
-  
+
   // Try to send the email notification
   if (notification.type === 'email') {
     const emailSent = await sendEmail(
@@ -108,7 +108,7 @@ const addNotification = async (notification: NotificationRequest): Promise<Notif
     // For non-email notifications, just mark as sent
     status = 'sent';
   }
-  
+
   const newNotification: Notification = {
     id: notificationIdCounter++,
     recipientId: notification.recipientId,
@@ -120,7 +120,7 @@ const addNotification = async (notification: NotificationRequest): Promise<Notif
     metadata: notification.metadata || {},
     createdAt: now
   };
-  
+
   notifications.push(newNotification);
   return newNotification;
 };
@@ -130,13 +130,13 @@ const addNotification = async (notification: NotificationRequest): Promise<Notif
  */
 export const sendNotification = async (notification: NotificationRequest): Promise<Notification> => {
   log(`Sending ${notification.type} notification to user ${notification.recipientId}: ${notification.subject}`, 'notification-service');
-  
+
   // Update service status
   await storage.updateServiceStatus('notification-service', ServiceStatus.HEALTHY, 'Service is operating normally');
-  
+
   // Process the notification
   const result = await addNotification(notification);
-  
+
   return result;
 };
 
@@ -152,8 +152,8 @@ export const configureEmailSettings = (config: Partial<EmailConfig>): void => {
  * Send order confirmation notification
  */
 export const sendOrderConfirmation = async (
-  userId: number, 
-  orderId: number, 
+  userId: number,
+  orderId: number,
   orderDetails: any
 ): Promise<Notification> => {
   // Get user email (in a real app, we'd look this up)
@@ -161,7 +161,7 @@ export const sendOrderConfirmation = async (
   if (!user) {
     throw new Error('User not found');
   }
-  
+
   return sendNotification({
     recipientId: userId,
     recipientEmail: user.email,
@@ -179,8 +179,8 @@ export const sendOrderConfirmation = async (
  * Send order status update notification
  */
 export const sendOrderStatusUpdate = async (
-  userId: number, 
-  orderId: number, 
+  userId: number,
+  orderId: number,
   status: string
 ): Promise<Notification> => {
   // Get user email (in a real app, we'd look this up)
@@ -188,9 +188,9 @@ export const sendOrderStatusUpdate = async (
   if (!user) {
     throw new Error('User not found');
   }
-  
+
   let message = '';
-  
+
   switch (status) {
     case 'processing':
       message = `Your order #${orderId} is now being processed. We'll notify you when it ships.`;
@@ -207,7 +207,7 @@ export const sendOrderStatusUpdate = async (
     default:
       message = `Your order #${orderId} status has been updated to: ${status}`;
   }
-  
+
   return sendNotification({
     recipientId: userId,
     recipientEmail: user.email,
@@ -225,8 +225,8 @@ export const sendOrderStatusUpdate = async (
  * Send payment confirmation notification
  */
 export const sendPaymentConfirmation = async (
-  userId: number, 
-  orderId: number, 
+  userId: number,
+  orderId: number,
   amount: number
 ): Promise<Notification> => {
   // Get user email (in a real app, we'd look this up)
@@ -234,7 +234,7 @@ export const sendPaymentConfirmation = async (
   if (!user) {
     throw new Error('User not found');
   }
-  
+
   return sendNotification({
     recipientId: userId,
     recipientEmail: user.email,

@@ -13,6 +13,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
 
   // Product Service
@@ -170,6 +171,15 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
   async getUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
@@ -284,12 +294,12 @@ export class MemStorage implements IStorage {
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = this.orderId++;
     const createdAt = new Date();
-    const order: Order = { 
-      ...insertOrder, 
-      id, 
+    const order: Order = {
+      ...insertOrder,
+      id,
       createdAt,
       // Ensure order ID is in format ORD-XXXX
-      orderId: `ORD-${String(id).padStart(4, '0')}` 
+      orderId: `ORD-${String(id).padStart(4, '0')}`
     };
     this.orders.set(id, order);
     return order;
@@ -356,27 +366,27 @@ export class MemStorage implements IStorage {
 
   async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatus> {
     const existingStatus = this.serviceStatuses.get(name);
-    
+
     if (existingStatus) {
-      const updatedStatus = { 
-        ...existingStatus, 
-        status, 
+      const updatedStatus = {
+        ...existingStatus,
+        status,
         details: details || existingStatus.details,
         lastUpdated: new Date()
       };
       this.serviceStatuses.set(name, updatedStatus);
       return updatedStatus;
     }
-    
+
     // Create a new status if it doesn't exist
     const id = this.serviceStatusId++;
     const lastUpdated = new Date();
-    const serviceStatus: ServiceStatus = { 
-      id, 
-      name, 
-      status, 
-      details: details || "", 
-      lastUpdated 
+    const serviceStatus: ServiceStatus = {
+      id,
+      name,
+      status,
+      details: details || "",
+      lastUpdated
     };
     this.serviceStatuses.set(name, serviceStatus);
     return serviceStatus;
@@ -398,12 +408,12 @@ let activeStorage: IStorage = memStorage;
 export async function initializeStorage(): Promise<IStorage> {
   // Check if we should use the database (default to true if DATABASE_URL is set)
   const useDatabase = !!process.env.DATABASE_URL;
-  
+
   if (useDatabase) {
     try {
       // Initialize the database
       const dbReady = await setupDatabase();
-      
+
       if (dbReady) {
         console.log('PostgreSQL database initialized successfully');
         activeStorage = pgStorage;
@@ -423,7 +433,7 @@ export async function initializeStorage(): Promise<IStorage> {
     console.log('Using in-memory storage (MemStorage) - no DATABASE_URL provided');
     activeStorage = memStorage;
   }
-  
+
   return activeStorage;
 }
 
