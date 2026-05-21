@@ -1,4 +1,5 @@
 node_modules
+.npx-cache
 dist
 .DS_Store
 server/public
