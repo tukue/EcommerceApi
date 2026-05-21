@@ -1,4 +1,4 @@
-import { pool } from './simple-db.js';
+import { pool } from './db.js';
 import * as schema from '../shared/schema.js';
 
 export async function initDatabase() {

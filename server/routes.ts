@@ -51,10 +51,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up session
   app.use(
     session({
-      secret: "microstore-secret",
+      secret: process.env.SESSION_SECRET || "microstore-secret-dev",
       resave: false,
       saveUninitialized: false,
-      cookie: { secure: false },
+      cookie: { secure: process.env.NODE_ENV === "production" },
     })
   );
 
@@ -625,7 +625,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const requireAdmin = (req: Request, res: Response): boolean => {
+    if (!req.session.user?.isAdmin) {
+      res.status(403).json({ error: "Admin access required" });
+      return false;
+    }
+    return true;
+  };
+
   app.post("/api/products", async (req, res) => {
+    if (!requireAdmin(req, res)) return;
     try {
       const productData = insertProductSchema.parse(req.body);
       const product = await productService.createProduct(productData);
@@ -639,6 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/products/:id", async (req, res) => {
+    if (!requireAdmin(req, res)) return;
     try {
       const id = Number(req.params.id);
       const productData = insertProductSchema.partial().parse(req.body);
@@ -658,6 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/products/:id", async (req, res) => {
+    if (!requireAdmin(req, res)) return;
     try {
       const id = Number(req.params.id);
       const deleted = await productService.deleteProduct(id);

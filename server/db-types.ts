@@ -1,53 +1,32 @@
-import { ServiceStatus as ServiceStatusEnum, OrderStatus, PaymentStatus } from "../shared/schema";
+import { OrderStatus, PaymentStatus, ServiceStatus as ServiceStatusEnum } from "../shared/schema";
+import type { ServiceStatus } from "../shared/schema";
 
-// Define explicit types for handling database rows
-export interface DbServiceStatus {
+export function dbToServiceStatus(dbStatus: {
   id: number;
   name: string;
   status: string;
   details: string | null;
   lastUpdated: Date | null;
-}
-
-// Convert db types to application types
-export function dbToServiceStatus(dbStatus: DbServiceStatus): any {
+}): ServiceStatus {
   return {
     id: dbStatus.id,
     name: dbStatus.name,
     status: dbStatus.status as ServiceStatusEnum,
     details: dbStatus.details || "",
-    lastUpdated: dbStatus.lastUpdated || new Date()
+    lastUpdated: dbStatus.lastUpdated || new Date(),
   };
 }
 
-// Helper function to ensure status is valid
-export function validateStatus(status: any, defaultStatus: string): string {
-  if (typeof status === 'string') {
-    return status;
-  }
-  return defaultStatus;
-}
-
-// Helper function to ensure OrderStatus is valid
-export function validateOrderStatus(status: any): OrderStatus {
+export function validateOrderStatus(status: string): OrderStatus {
   if (Object.values(OrderStatus).includes(status as OrderStatus)) {
     return status as OrderStatus;
   }
   return OrderStatus.PENDING;
 }
 
-// Helper function to ensure PaymentStatus is valid
-export function validatePaymentStatus(status: any): PaymentStatus {
+export function validatePaymentStatus(status: string): PaymentStatus {
   if (Object.values(PaymentStatus).includes(status as PaymentStatus)) {
     return status as PaymentStatus;
   }
   return PaymentStatus.PENDING;
-}
-
-// Helper function to ensure ServiceStatusEnum is valid
-export function validateServiceStatus(status: any): ServiceStatusEnum {
-  if (Object.values(ServiceStatusEnum).includes(status as ServiceStatusEnum)) {
-    return status as ServiceStatusEnum;
-  }
-  return ServiceStatusEnum.WARNING;
 }
