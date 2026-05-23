@@ -3,7 +3,7 @@ import {
   type User, type InsertUser, type Product, type InsertProduct,
   type Cart, type InsertCart, type CartItem, type InsertCartItem,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
-  type Payment, type InsertPayment, type ServiceStatus, type InsertServiceStatus,
+  type Payment, type InsertPayment, type ServiceStatusRecord,
   OrderStatus, PaymentStatus, ServiceStatus as ServiceStatusEnum
 } from "@shared/schema";
 
@@ -48,9 +48,9 @@ export interface IStorage {
   updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment | undefined>;
 
   // Service Status
-  getServiceStatus(name: string): Promise<ServiceStatus | undefined>;
-  getServiceStatuses(): Promise<ServiceStatus[]>;
-  updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatus>;
+  getServiceStatus(name: string): Promise<ServiceStatusRecord | undefined>;
+  getServiceStatuses(): Promise<ServiceStatusRecord[]>;
+  updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatusRecord>;
 }
 
 // In-Memory Storage Implementation
@@ -62,7 +62,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private payments: Map<number, Payment>;
-  private serviceStatuses: Map<string, ServiceStatus>;
+  private serviceStatuses: Map<string, ServiceStatusRecord>;
 
   private userId: number;
   private productId: number;
@@ -166,7 +166,13 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id, isAdmin: false };
+    const user: User = {
+      ...insertUser,
+      id,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
+      isAdmin: false,
+    };
     this.users.set(id, user);
     return user;
   }
@@ -195,7 +201,14 @@ export class MemStorage implements IStorage {
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = this.productId++;
-    const product: Product = { ...insertProduct, id };
+    const product: Product = {
+      ...insertProduct,
+      id,
+      description: insertProduct.description ?? null,
+      imageUrl: insertProduct.imageUrl ?? null,
+      inventory: insertProduct.inventory ?? 0,
+      category: insertProduct.category ?? null,
+    };
     this.products.set(id, product);
     return product;
   }
@@ -246,12 +259,12 @@ export class MemStorage implements IStorage {
 
     if (existingItem) {
       // Update the quantity of the existing item
-      return this.updateCartItem(existingItem.id, existingItem.quantity + insertCartItem.quantity) as Promise<CartItem>;
+      return this.updateCartItem(existingItem.id, existingItem.quantity + (insertCartItem.quantity ?? 1)) as Promise<CartItem>;
     }
 
     // Add a new item to the cart
     const id = this.cartItemId++;
-    const cartItem: CartItem = { ...insertCartItem, id };
+    const cartItem: CartItem = { ...insertCartItem, id, quantity: insertCartItem.quantity ?? 1 };
     this.cartItems.set(id, cartItem);
     return cartItem;
   }
@@ -297,9 +310,9 @@ export class MemStorage implements IStorage {
     const order: Order = {
       ...insertOrder,
       id,
+      status: (insertOrder.status as OrderStatus | undefined) ?? OrderStatus.PENDING,
+      shippingAddress: insertOrder.shippingAddress ?? null,
       createdAt,
-      // Ensure order ID is in format ORD-XXXX
-      orderId: `ORD-${String(id).padStart(4, '0')}`
     };
     this.orders.set(id, order);
     return order;
@@ -341,7 +354,13 @@ export class MemStorage implements IStorage {
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
     const id = this.paymentId++;
     const createdAt = new Date();
-    const payment: Payment = { ...insertPayment, id, createdAt };
+    const payment: Payment = {
+      ...insertPayment,
+      id,
+      status: (insertPayment.status as PaymentStatus | undefined) ?? PaymentStatus.PENDING,
+      transactionId: insertPayment.transactionId ?? null,
+      createdAt,
+    };
     this.payments.set(id, payment);
     return payment;
   }
@@ -356,15 +375,15 @@ export class MemStorage implements IStorage {
   }
 
   // Service Status Methods
-  async getServiceStatus(name: string): Promise<ServiceStatus | undefined> {
+  async getServiceStatus(name: string): Promise<ServiceStatusRecord | undefined> {
     return this.serviceStatuses.get(name);
   }
 
-  async getServiceStatuses(): Promise<ServiceStatus[]> {
+  async getServiceStatuses(): Promise<ServiceStatusRecord[]> {
     return Array.from(this.serviceStatuses.values());
   }
 
-  async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatus> {
+  async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatusRecord> {
     const existingStatus = this.serviceStatuses.get(name);
 
     if (existingStatus) {
@@ -381,7 +400,7 @@ export class MemStorage implements IStorage {
     // Create a new status if it doesn't exist
     const id = this.serviceStatusId++;
     const lastUpdated = new Date();
-    const serviceStatus: ServiceStatus = {
+    const serviceStatus: ServiceStatusRecord = {
       id,
       name,
       status,

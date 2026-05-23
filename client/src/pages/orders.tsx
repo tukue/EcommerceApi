@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrdersTable } from '@/components/orders/orders-table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Order, OrderStatus } from '@shared/schema';
-import api from '@/lib/axios';
 
 const Orders: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('all');
@@ -80,13 +79,13 @@ const Orders: React.FC = () => {
                     filteredOrders.map((order) => (
                       <tr key={order.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {order.orderId || `ORD-${order.id.toString().padStart(4, '0')}`}
+                          {`ORD-${order.id.toString().padStart(4, '0')}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           User #{order.userId}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

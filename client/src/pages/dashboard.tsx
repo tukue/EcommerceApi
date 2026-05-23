@@ -6,8 +6,13 @@ import { OrdersTable } from '@/components/orders/orders-table';
 import { MetricCard } from '@/components/dashboard/metric-card';
 import { ApiTrafficChart } from '@/components/dashboard/api-traffic-chart';
 import { ContainerList } from '@/components/containers/container-list';
-import api from '@/lib/axios';
 import { ServiceStatusWithMetrics } from '@shared/schema';
+
+interface GatewayMetrics {
+  orders: { count: number; change: number; period: string };
+  users: { count: number; change: number; period: string };
+  revenue: { amount: number; change: number; period: string };
+}
 
 const Dashboard: React.FC = () => {
   const { data: serviceStatuses, isLoading: statusesLoading } = useQuery<ServiceStatusWithMetrics[]>({
@@ -15,7 +20,7 @@ const Dashboard: React.FC = () => {
     staleTime: 60000, // 1 minute
   });
 
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery<GatewayMetrics>({
     queryKey: ['/api/gateway/metrics'],
     staleTime: 60000, // 1 minute
   });
@@ -39,8 +44,8 @@ const Dashboard: React.FC = () => {
                 key={status.name}
                 name={status.name}
                 status={status.status}
-                details={status.details}
-                lastUpdated={status.lastUpdated}
+                details={status.details ?? ''}
+                lastUpdated={status.lastUpdated ?? new Date()}
               />
             ))
           )}
@@ -59,23 +64,23 @@ const Dashboard: React.FC = () => {
           ) : (
             <>
               <MetricCard
-                title={metrics?.orders.period || "Total Orders (Last 7 Days)"}
-                value={metrics?.orders.count || 0}
-                change={metrics?.orders.change || 0}
+                title={metrics?.orders.period ?? "Total Orders (Last 7 Days)"}
+                value={metrics?.orders.count ?? 0}
+                change={metrics?.orders.change ?? 0}
                 period="vs. previous period"
                 icon="orders"
               />
               <MetricCard
                 title="Active Users"
-                value={metrics?.users.count || 0}
-                change={metrics?.users.change || 0}
-                period={metrics?.users.period || "vs. previous period"}
+                value={metrics?.users.count ?? 0}
+                change={metrics?.users.change ?? 0}
+                period={metrics?.users.period ?? "vs. previous period"}
                 icon="users"
               />
               <MetricCard
-                title={metrics?.revenue.period || "Revenue (Last 7 Days)"}
-                value={metrics?.revenue.amount || 0}
-                change={metrics?.revenue.change || 0}
+                title={metrics?.revenue.period ?? "Revenue (Last 7 Days)"}
+                value={metrics?.revenue.amount ?? 0}
+                change={metrics?.revenue.change ?? 0}
                 period="vs. previous period"
                 icon="revenue"
               />

@@ -1,5 +1,5 @@
 import { OrderStatus, PaymentStatus, ServiceStatus as ServiceStatusEnum } from "../shared/schema";
-import type { ServiceStatus } from "../shared/schema";
+import type { ServiceStatusRecord } from "../shared/schema";
 
 export function dbToServiceStatus(dbStatus: {
   id: number;
@@ -7,7 +7,7 @@ export function dbToServiceStatus(dbStatus: {
   status: string;
   details: string | null;
   lastUpdated: Date | null;
-}): ServiceStatus {
+}): ServiceStatusRecord {
   return {
     id: dbStatus.id,
     name: dbStatus.name,

@@ -3,16 +3,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/axios';
 
 interface ApiTrafficProps {
   className?: string;
 }
 
+interface ApiTrafficStats {
+  totalRequests: number;
+  averageResponse: string;
+  errorRate: string;
+  cacheHitRatio: string;
+  dataPoints: { time: string; requests: number }[];
+}
+
 export function ApiTrafficChart({ className }: ApiTrafficProps) {
   const [timeRange, setTimeRange] = React.useState('last24hours');
   
-  const { data: trafficData, isLoading } = useQuery({
+  const { data: trafficData, isLoading } = useQuery<ApiTrafficStats>({
     queryKey: ['/api/gateway/traffic'],
     staleTime: 60000, // 1 minute
   });
@@ -65,7 +72,7 @@ export function ApiTrafficChart({ className }: ApiTrafficProps) {
         <div className="h-64 bg-gray-50 rounded border border-gray-200 p-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={trafficData?.dataPoints}
+              data={trafficData?.dataPoints ?? []}
               margin={{
                 top: 5,
                 right: 30,
@@ -83,7 +90,7 @@ export function ApiTrafficChart({ className }: ApiTrafficProps) {
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <p className="text-sm text-gray-500">Total Requests</p>
-            <p className="text-lg font-semibold">{trafficData?.totalRequests.toLocaleString()}</p>
+            <p className="text-lg font-semibold">{trafficData?.totalRequests.toLocaleString() ?? '0'}</p>
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-500">Average Response</p>

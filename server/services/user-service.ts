@@ -22,7 +22,11 @@ export const getUserByUsername = async (username: string): Promise<User | undefi
 export const createUser = async (user: InsertUser): Promise<User> => {
   validateUser(user);
   // Use auth service to hash password and create user
-  return await authService.registerUser(user);
+  return await authService.registerUser({
+    ...user,
+    firstName: user.firstName ?? undefined,
+    lastName: user.lastName ?? undefined,
+  });
 };
 
 export const updateUser = async (id: number, userData: Partial<InsertUser>): Promise<User | undefined> => {

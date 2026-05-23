@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Order } from '@shared/schema';
-import api from '@/lib/axios';
 
 interface OrdersTableProps {
   limit?: number;
@@ -18,7 +17,8 @@ export function OrdersTable({ limit, showViewAll = false, className }: OrdersTab
   });
 
   // Format date to YYYY-MM-DD
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string | null) => {
+    if (!date) return 'N/A';
     const d = new Date(date);
     return d.toISOString().split('T')[0];
   };
@@ -72,7 +72,7 @@ export function OrdersTable({ limit, showViewAll = false, className }: OrdersTab
             {displayedOrders?.map((order) => (
               <tr key={order.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {order.orderId || `ORD-${order.id.toString().padStart(4, '0')}`}
+                  {`ORD-${order.id.toString().padStart(4, '0')}`}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   User #{order.userId}

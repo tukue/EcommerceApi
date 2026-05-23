@@ -64,7 +64,7 @@ export async function notificationHealth(_req: Request, res: Response) {
 export async function globalHealth(_req: Request, res: Response) {
   try {
     const healthResults = await services.checkServicesHealth();
-    const allHealthy = healthResults.every((s: { status: string }) => s.status === "healthy");
+    const allHealthy = Object.values(healthResults).every((isHealthy) => isHealthy);
     res.json({
       status: allHealthy ? "healthy" : "degraded",
       services: healthResults,

@@ -5,7 +5,7 @@ import {
   type User, type InsertUser, type Product, type InsertProduct,
   type Cart, type InsertCart, type CartItem, type InsertCartItem,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
-  type Payment, type InsertPayment, type ServiceStatus,
+  type Payment, type InsertPayment, type ServiceStatusRecord,
   OrderStatus, PaymentStatus, ServiceStatus as ServiceStatusEnum
 } from "../shared/schema";
 import { IStorage } from "./storage";
@@ -165,7 +165,7 @@ export class PgStorage implements IStorage {
   async createOrder(order: InsertOrder): Promise<Order> {
     const result = await db.insert(orders).values({
       userId: order.userId,
-      status: order.status || OrderStatus.PENDING,
+      status: (order.status as OrderStatus | undefined) ?? OrderStatus.PENDING,
       total: order.total,
       shippingAddress: order.shippingAddress || null,
     }).returning();
@@ -217,7 +217,7 @@ export class PgStorage implements IStorage {
     const result = await db.insert(payments).values({
       orderId: payment.orderId,
       amount: payment.amount,
-      status: payment.status || PaymentStatus.PENDING,
+      status: (payment.status as PaymentStatus | undefined) ?? PaymentStatus.PENDING,
       paymentMethod: payment.paymentMethod,
       transactionId: payment.transactionId || null,
     }).returning();
@@ -237,22 +237,22 @@ export class PgStorage implements IStorage {
   }
 
   // Service Status
-  async getServiceStatus(name: string): Promise<ServiceStatus | undefined> {
+  async getServiceStatus(name: string): Promise<ServiceStatusRecord | undefined> {
     const results = await db.select().from(serviceStatuses).where(eq(serviceStatuses.name, name)).limit(1);
     const row = firstRow(results);
     if (!row) return undefined;
     return dbToServiceStatus(row);
   }
 
-  async getServiceStatuses(): Promise<ServiceStatus[]> {
+  async getServiceStatuses(): Promise<ServiceStatusRecord[]> {
     const results = await db.select().from(serviceStatuses);
     return results.map((status) => dbToServiceStatus(status));
   }
 
-  async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatus> {
+  async updateServiceStatus(name: string, status: ServiceStatusEnum, details?: string): Promise<ServiceStatusRecord> {
     const updateResult = await db.update(serviceStatuses)
       .set({
-        status: status as string,
+        status,
         details: details || null,
         lastUpdated: new Date(),
       })
@@ -264,7 +264,7 @@ export class PgStorage implements IStorage {
     }
 
     const insertResult = await db.insert(serviceStatuses)
-      .values({ name, status: status as string, details: details || null })
+      .values({ name, status, details: details || null })
       .returning();
 
     return dbToServiceStatus(insertResult[0]);
