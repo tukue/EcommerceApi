@@ -1,7 +1,7 @@
 import { storage } from "../storage";
-import { insertOrderSchema, insertOrderItemSchema, OrderStatus, type Order, type InsertOrder, type OrderItem, type InsertOrderItem, type OrderWithItems, type Product } from "@shared/schema";
+import { insertOrderSchema, insertOrderItemSchema, OrderStatus, type Order, type InsertOrder, type OrderItem, type OrderWithItems, type Product } from "@shared/schema";
 import { getCartWithItems } from "./cart-service";
-import { z } from "zod";
+import * as notificationService from "./notification-service";
 
 export const validateOrder = (data: unknown) => {
   return insertOrderSchema.parse(data);
@@ -24,12 +24,8 @@ export const getOrdersByUserId = async (userId: number): Promise<Order[]> => {
 };
 
 export const createOrder = async (order: InsertOrder): Promise<Order> => {
-  try {
-    validateOrder(order);
-    return await storage.createOrder(order);
-  } catch (error) {
-    throw error;
-  }
+  validateOrder(order);
+  return await storage.createOrder(order);
 };
 
 export const updateOrderStatus = async (id: number, status: OrderStatus): Promise<Order | undefined> => {
@@ -98,6 +94,12 @@ export const createOrderFromCart = async (userId: number, shippingAddress: strin
   // Clear the cart
   for (const item of cartWithItems.items) {
     await storage.removeCartItem(item.id);
+  }
+
+  // Send order confirmation notification
+  const user = await storage.getUser(userId);
+  if (user) {
+    await notificationService.sendOrderConfirmation(userId, order.id, cartWithItems);
   }
 
   return getOrderWithItems(order.id);

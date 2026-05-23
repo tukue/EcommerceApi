@@ -91,21 +91,13 @@ export const getProduct = async (id: number): Promise<Product | undefined> => {
 };
 
 export const createProduct = async (product: InsertProduct): Promise<Product> => {
-  try {
-    validateProduct(product);
-    return await storage.createProduct(product);
-  } catch (error) {
-    throw error;
-  }
+  validateProduct(product);
+  return await storage.createProduct(product);
 };
 
 export const updateProduct = async (id: number, product: Partial<InsertProduct>): Promise<Product | undefined> => {
-  try {
-    validateProductUpdate(product);
-    return await storage.updateProduct(id, product);
-  } catch (error) {
-    throw error;
-  }
+  validateProductUpdate(product);
+  return await storage.updateProduct(id, product);
 };
 
 export const deleteProduct = async (id: number): Promise<boolean> => {

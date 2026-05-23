@@ -24,6 +24,9 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.jest },
     },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
   },
   { ignores: ["dist", "node_modules", "build", "client"] },
 );

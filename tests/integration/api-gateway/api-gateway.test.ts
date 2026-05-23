@@ -222,7 +222,8 @@ describe('API Gateway Integration', () => {
         price: 29.99,
         category: 'Test',
         inventory: 10,
-        imageUrl: 'https://example.com/integration-image.jpg'
+        imageUrl: 'https://example.com/integration-image.jpg',
+        sku: 'INT-001'
       });
       
       const res = await request(app)
@@ -244,7 +245,8 @@ describe('API Gateway Integration', () => {
         price: 39.99,
         category: 'Test',
         inventory: 5,
-        imageUrl: 'https://example.com/get-by-id.jpg'
+        imageUrl: 'https://example.com/get-by-id.jpg',
+        sku: 'INT-002'
       });
       
       const res = await request(app)
@@ -263,7 +265,8 @@ describe('API Gateway Integration', () => {
         price: 49.99,
         category: 'Admin',
         inventory: 20,
-        imageUrl: 'https://example.com/admin-created.jpg'
+        imageUrl: 'https://example.com/admin-created.jpg',
+        sku: 'INT-003'
       };
       
       // Mock session to be authenticated as admin
@@ -289,7 +292,8 @@ describe('API Gateway Integration', () => {
         price: 19.99,
         category: 'User',
         inventory: 3,
-        imageUrl: 'https://example.com/user-created.jpg'
+        imageUrl: 'https://example.com/user-created.jpg',
+        sku: 'INT-004'
       };
       
       // Mock session to be authenticated as regular user
@@ -328,7 +332,8 @@ describe('API Gateway Integration', () => {
         price: 24.99,
         category: 'Test',
         inventory: 15,
-        imageUrl: 'https://example.com/cart-item.jpg'
+        imageUrl: 'https://example.com/cart-item.jpg',
+        sku: 'INT-005'
       });
       
       const cart = await storage.createCart({ userId: testUser.id });
@@ -358,7 +363,8 @@ describe('API Gateway Integration', () => {
         price: 14.99,
         category: 'Test',
         inventory: 8,
-        imageUrl: 'https://example.com/get-cart-items.jpg'
+        imageUrl: 'https://example.com/get-cart-items.jpg',
+        sku: 'INT-006'
       });
       
       const cart = await storage.createCart({ userId: testUser.id });

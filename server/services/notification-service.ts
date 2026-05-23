@@ -94,7 +94,7 @@ const sendEmail = async (to: string, subject: string, text: string): Promise<boo
 // Utility to add notification
 const addNotification = async (notification: NotificationRequest): Promise<Notification> => {
   const now = new Date();
-  let status: 'pending' | 'sent' | 'failed' = 'pending';
+  let status: 'pending' | 'sent' | 'failed';
 
   // Try to send the email notification
   if (notification.type === 'email') {
@@ -189,7 +189,7 @@ export const sendOrderStatusUpdate = async (
     throw new Error('User not found');
   }
 
-  let message = '';
+  let message: string;
 
   switch (status) {
     case 'processing':

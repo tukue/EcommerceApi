@@ -43,7 +43,8 @@ describe('Order Service', () => {
       price: 29.99,
       category: 'Test',
       inventory: 10,
-      imageUrl: 'https://example.com/order-image.jpg'
+      imageUrl: 'https://example.com/order-image.jpg',
+      sku: 'ORD-001'
     };
     testProduct = await storage.createProduct(mockProduct);
     
@@ -92,7 +93,7 @@ describe('Order Service', () => {
       const { storage } = require('../../../server/storage');
       
       const cart = await cartService.createCart({ userId: testUser.id });
-      await cartService.addItemToCart(cart.id, testProduct.id, 3);
+      await cartService.addItemToCart(testUser.id, testProduct.id, 3);
       
       // Create order from cart
       const shippingAddress = '789 Cart St, Cart City, Cart Country';

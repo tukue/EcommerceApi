@@ -60,7 +60,7 @@ describe('Payment Service', () => {
     const mockPayment: InsertPayment = {
       orderId: testOrder.id,
       amount: testOrder.total,
-      method: 'credit_card',
+      paymentMethod: 'credit_card',
       status: PaymentStatus.PENDING
     };
     testPayment = await paymentService.createPayment(mockPayment);
@@ -81,7 +81,7 @@ describe('Payment Service', () => {
       const newPayment: InsertPayment = {
         orderId: anotherOrder.id,
         amount: anotherOrder.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       };
       
@@ -100,7 +100,7 @@ describe('Payment Service', () => {
       const duplicatePayment: InsertPayment = {
         orderId: testOrder.id,
         amount: testOrder.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       };
       
