@@ -16,6 +16,11 @@ jest.mock('express-session', () => {
   };
 });
 
+// Mock the logger
+jest.mock('../../../server/vite', () => ({
+  log: jest.fn()
+}));
+
 // Mock the storage
 jest.mock('../../../server/storage', () => {
   const mockStorage = new MockStorage();
@@ -125,10 +130,15 @@ describe('API Gateway Integration', () => {
     
     // Register all routes
     await registerRoutes(app);
+  });
+
+  beforeEach(async () => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test users in the database
-    const { storage } = require('../../../server/storage');
-    
     // Regular user
     const mockUser: InsertUser = {
       username: 'testintegration',
@@ -150,11 +160,6 @@ describe('API Gateway Integration', () => {
     // Create the auth tokens (just for simulation)
     authToken = Buffer.from(JSON.stringify(testUser)).toString('base64');
     adminAuthToken = Buffer.from(JSON.stringify(adminUser)).toString('base64');
-  });
-
-  beforeEach(() => {
-    // Reset mocks between tests
-    jest.clearAllMocks();
   });
 
   describe('Authentication', () => {
@@ -470,7 +475,7 @@ describe('API Gateway Integration', () => {
         .send({
           orderId: order.id,
           amount: order.total,
-          method: 'credit_card',
+          paymentMethod: 'credit_card',
           status: PaymentStatus.PENDING
         });
       
@@ -493,7 +498,7 @@ describe('API Gateway Integration', () => {
       await storage.createPayment({
         orderId: order.id,
         amount: order.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       });
       
@@ -503,7 +508,7 @@ describe('API Gateway Integration', () => {
       
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('orderId', order.id);
-      expect(res.body).toHaveProperty('method', 'paypal');
+      expect(res.body).toHaveProperty('paymentMethod', 'paypal');
     });
 
     it('should update a payment status', async () => {
@@ -520,7 +525,7 @@ describe('API Gateway Integration', () => {
       const payment = await storage.createPayment({
         orderId: order.id,
         amount: order.total,
-        method: 'credit_card',
+        paymentMethod: 'credit_card',
         status: PaymentStatus.PENDING
       });
       

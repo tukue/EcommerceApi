@@ -22,11 +22,10 @@ describe('Order Service', () => {
   let testOrderItem: OrderItem;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
-    
-    // Create test data
     const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create user
     const mockUser: InsertUser = {
@@ -100,6 +99,7 @@ describe('Order Service', () => {
       const order = await orderService.createOrderFromCart(testUser.id, shippingAddress);
       
       expect(order).toBeDefined();
+      if (!order) return;
       expect(order.userId).toBe(testUser.id);
       expect(order.status).toBe(OrderStatus.PENDING);
       expect(order.shippingAddress).toBe(shippingAddress);
@@ -112,6 +112,8 @@ describe('Order Service', () => {
       
       // Check if cart was cleared
       const cartWithItems = await cartService.getCartWithItems(cart.id);
+      expect(cartWithItems).toBeDefined();
+      if (!cartWithItems) return;
       expect(cartWithItems.items.length).toBe(0);
       
       // Check if notification was sent

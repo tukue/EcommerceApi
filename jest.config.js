@@ -27,7 +27,7 @@ export default {
   coverageDirectory: 'coverage',
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
+      tsconfig: 'tsconfig.test.json',
       useESM: true,
     }],
   },

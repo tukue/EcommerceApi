@@ -15,8 +15,10 @@ describe('Cart Service', () => {
   let testCartItem: CartItem;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test data
     const mockUser: InsertUser = {
@@ -34,9 +36,6 @@ describe('Cart Service', () => {
       imageUrl: 'https://example.com/image.jpg',
       sku: 'CRT-001'
     };
-    
-    // Need to access the storage mock directly
-    const { storage } = require('../../../server/storage');
     
     testUser = await storage.createUser(mockUser);
     testProduct = await storage.createProduct(mockProduct);

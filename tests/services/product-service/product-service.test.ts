@@ -22,8 +22,10 @@ describe('Product Service', () => {
   let createdProduct: Product;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test data
     createdProduct = await productService.createProduct(mockProduct);

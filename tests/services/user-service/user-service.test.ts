@@ -18,8 +18,10 @@ describe('User Service', () => {
   let createdUser: User;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test data
     createdUser = await userService.createUser(mockUser);
@@ -101,17 +103,18 @@ describe('User Service', () => {
     });
   });
 
-  describe('verifyPassword', () => {
-    it('should verify a correct password', async () => {
-      const result = await userService.verifyPassword(createdUser, mockUser.password);
-      
-      expect(result).toBe(true);
+  describe('authenticateUser', () => {
+    it('should authenticate with valid credentials', async () => {
+      const result = await userService.authenticateUser(createdUser.username, mockUser.password);
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(createdUser.id);
     });
 
-    it('should reject an incorrect password', async () => {
-      const result = await userService.verifyPassword(createdUser, 'wrongpassword');
-      
-      expect(result).toBe(false);
+    it('should reject invalid password', async () => {
+      const result = await userService.authenticateUser(createdUser.username, 'wrongpassword');
+
+      expect(result).toBeNull();
     });
   });
 });
