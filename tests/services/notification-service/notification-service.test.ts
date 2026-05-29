@@ -24,11 +24,10 @@ describe('Notification Service', () => {
   let testUser: User;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
-    
-    // Create test data
     const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create user
     const mockUser: InsertUser = {

@@ -3,19 +3,22 @@ import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Payment, PaymentStatus } from '@shared/schema';
-import api from '@/lib/axios';
+import { Order, Payment, PaymentStatus } from '@shared/schema';
+
+type PaymentSummary = Payment & {
+  createdAt: Date | string | null;
+};
 
 const Payments: React.FC = () => {
   // Mock implementation since we don't have a backend endpoint to get all payments
   // In a real implementation, we would fetch from a proper endpoint
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
     staleTime: 60000,
   });
 
   // Extract payment information from orders
-  const payments = React.useMemo(() => {
+  const payments = React.useMemo<PaymentSummary[]>(() => {
     if (!orders) return [];
     
     // This is just a mock to simulate payment data
@@ -32,7 +35,8 @@ const Payments: React.FC = () => {
     }));
   }, [orders]);
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string | null) => {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
   };
 

@@ -158,7 +158,7 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 
-export type ServiceStatus = typeof serviceStatuses.$inferSelect;
+export type ServiceStatusRecord = typeof serviceStatuses.$inferSelect;
 export type InsertServiceStatus = z.infer<typeof insertServiceStatusSchema>;
 
 // Extended types for frontend usage
@@ -173,7 +173,7 @@ export type OrderWithItems = Order & {
   user: User;
 };
 
-export type ServiceStatusWithMetrics = ServiceStatus & {
+export type ServiceStatusWithMetrics = ServiceStatusRecord & {
   metrics?: {
     cpu?: number;
     memory?: number;

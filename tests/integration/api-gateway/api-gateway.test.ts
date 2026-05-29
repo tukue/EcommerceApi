@@ -16,6 +16,11 @@ jest.mock('express-session', () => {
   };
 });
 
+// Mock the logger
+jest.mock('../../../server/vite', () => ({
+  log: jest.fn()
+}));
+
 // Mock the storage
 jest.mock('../../../server/storage', () => {
   const mockStorage = new MockStorage();
@@ -125,10 +130,15 @@ describe('API Gateway Integration', () => {
     
     // Register all routes
     await registerRoutes(app);
+  });
+
+  beforeEach(async () => {
+    // Reset mocks between tests
+    jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test users in the database
-    const { storage } = require('../../../server/storage');
-    
     // Regular user
     const mockUser: InsertUser = {
       username: 'testintegration',
@@ -150,11 +160,6 @@ describe('API Gateway Integration', () => {
     // Create the auth tokens (just for simulation)
     authToken = Buffer.from(JSON.stringify(testUser)).toString('base64');
     adminAuthToken = Buffer.from(JSON.stringify(adminUser)).toString('base64');
-  });
-
-  beforeEach(() => {
-    // Reset mocks between tests
-    jest.clearAllMocks();
   });
 
   describe('Authentication', () => {
@@ -222,7 +227,8 @@ describe('API Gateway Integration', () => {
         price: 29.99,
         category: 'Test',
         inventory: 10,
-        imageUrl: 'https://example.com/integration-image.jpg'
+        imageUrl: 'https://example.com/integration-image.jpg',
+        sku: 'INT-001'
       });
       
       const res = await request(app)
@@ -244,7 +250,8 @@ describe('API Gateway Integration', () => {
         price: 39.99,
         category: 'Test',
         inventory: 5,
-        imageUrl: 'https://example.com/get-by-id.jpg'
+        imageUrl: 'https://example.com/get-by-id.jpg',
+        sku: 'INT-002'
       });
       
       const res = await request(app)
@@ -263,7 +270,8 @@ describe('API Gateway Integration', () => {
         price: 49.99,
         category: 'Admin',
         inventory: 20,
-        imageUrl: 'https://example.com/admin-created.jpg'
+        imageUrl: 'https://example.com/admin-created.jpg',
+        sku: 'INT-003'
       };
       
       // Mock session to be authenticated as admin
@@ -289,7 +297,8 @@ describe('API Gateway Integration', () => {
         price: 19.99,
         category: 'User',
         inventory: 3,
-        imageUrl: 'https://example.com/user-created.jpg'
+        imageUrl: 'https://example.com/user-created.jpg',
+        sku: 'INT-004'
       };
       
       // Mock session to be authenticated as regular user
@@ -328,7 +337,8 @@ describe('API Gateway Integration', () => {
         price: 24.99,
         category: 'Test',
         inventory: 15,
-        imageUrl: 'https://example.com/cart-item.jpg'
+        imageUrl: 'https://example.com/cart-item.jpg',
+        sku: 'INT-005'
       });
       
       const cart = await storage.createCart({ userId: testUser.id });
@@ -358,7 +368,8 @@ describe('API Gateway Integration', () => {
         price: 14.99,
         category: 'Test',
         inventory: 8,
-        imageUrl: 'https://example.com/get-cart-items.jpg'
+        imageUrl: 'https://example.com/get-cart-items.jpg',
+        sku: 'INT-006'
       });
       
       const cart = await storage.createCart({ userId: testUser.id });
@@ -464,7 +475,7 @@ describe('API Gateway Integration', () => {
         .send({
           orderId: order.id,
           amount: order.total,
-          method: 'credit_card',
+          paymentMethod: 'credit_card',
           status: PaymentStatus.PENDING
         });
       
@@ -487,7 +498,7 @@ describe('API Gateway Integration', () => {
       await storage.createPayment({
         orderId: order.id,
         amount: order.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       });
       
@@ -497,7 +508,7 @@ describe('API Gateway Integration', () => {
       
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('orderId', order.id);
-      expect(res.body).toHaveProperty('method', 'paypal');
+      expect(res.body).toHaveProperty('paymentMethod', 'paypal');
     });
 
     it('should update a payment status', async () => {
@@ -514,7 +525,7 @@ describe('API Gateway Integration', () => {
       const payment = await storage.createPayment({
         orderId: order.id,
         amount: order.total,
-        method: 'credit_card',
+        paymentMethod: 'credit_card',
         status: PaymentStatus.PENDING
       });
       

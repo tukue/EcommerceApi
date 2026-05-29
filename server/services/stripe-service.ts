@@ -64,7 +64,7 @@ export async function createPaymentIntent(
     };
   } catch (error) {
     log(`Stripe payment intent creation failed: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to create payment intent: ${(error as Error).message}`);
+    throw new Error(`Failed to create payment intent: ${(error as Error).message}`, { cause: error });
   }
 }
 
@@ -84,7 +84,7 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<St
     return await stripe.paymentIntents.retrieve(paymentIntentId);
   } catch (error) {
     log(`Failed to retrieve payment intent: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to retrieve payment intent: ${(error as Error).message}`);
+    throw new Error(`Failed to retrieve payment intent: ${(error as Error).message}`, { cause: error });
   }
 }
 
@@ -107,7 +107,7 @@ export async function confirmPaymentIntent(paymentIntentId: string, paymentMetho
     });
   } catch (error) {
     log(`Failed to confirm payment intent: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to confirm payment intent: ${(error as Error).message}`);
+    throw new Error(`Failed to confirm payment intent: ${(error as Error).message}`, { cause: error });
   }
 }
 
@@ -127,7 +127,7 @@ export async function cancelPaymentIntent(paymentIntentId: string): Promise<Stri
     return await stripe.paymentIntents.cancel(paymentIntentId);
   } catch (error) {
     log(`Failed to cancel payment intent: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to cancel payment intent: ${(error as Error).message}`);
+    throw new Error(`Failed to cancel payment intent: ${(error as Error).message}`, { cause: error });
   }
 }
 
@@ -157,7 +157,7 @@ export async function createRefund(paymentIntentId: string, amount?: number): Pr
     return await stripe.refunds.create(refundData);
   } catch (error) {
     log(`Failed to create refund: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to create refund: ${(error as Error).message}`);
+    throw new Error(`Failed to create refund: ${(error as Error).message}`, { cause: error });
   }
 }
 
@@ -212,7 +212,7 @@ export async function createPaymentMethod(token: string): Promise<Stripe.Payment
     });
   } catch (error) {
     log(`Failed to create payment method: ${(error as Error).message}`, 'stripe-service');
-    throw new Error(`Failed to create payment method: ${(error as Error).message}`);
+    throw new Error(`Failed to create payment method: ${(error as Error).message}`, { cause: error });
   }
 }
 

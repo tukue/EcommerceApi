@@ -236,7 +236,7 @@ export async function createStripeCheckoutSession(
     await storage.updatePaymentStatus(payment.id, PaymentStatus.FAILED);
 
     log(`Failed to create Stripe checkout session: ${(error as Error).message}`, 'payment-service');
-    throw new Error(`Failed to create checkout session: ${(error as Error).message}`);
+    throw new Error(`Failed to create checkout session: ${(error as Error).message}`, { cause: error });
   }
 }
 

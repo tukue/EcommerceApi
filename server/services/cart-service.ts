@@ -19,12 +19,8 @@ export const getCartByUserId = async (userId: number): Promise<Cart | undefined>
 };
 
 export const createCart = async (cart: InsertCart): Promise<Cart> => {
-  try {
-    validateCart(cart);
-    return await storage.createCart(cart);
-  } catch (error) {
-    throw error;
-  }
+  validateCart(cart);
+  return await storage.createCart(cart);
 };
 
 export const getCartWithItems = async (cartId: number): Promise<CartWithItems | undefined> => {

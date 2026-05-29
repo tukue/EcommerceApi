@@ -1,138 +1,211 @@
-# Microservices E-Commerce Platform
+# Microstore — Microservices E-Commerce Platform
 
-A scalable e-commerce platform built with microservices architecture, designed for robust product catalog management, shopping cart functionality, order processing, and payment integration.
+**What this repo proves:** Monolithic deployment doesn't mean monolithic code. This full-stack e-commerce platform is organized as a set of independently extractable microservices — each with its own controller, service layer, storage abstraction, health checks, and service client — deployed today as a single Express process, ready to split tomorrow.
 
-## Architecture Overview
+Built for engineers who care about architecture: service registry pattern, dual storage backends (PostgreSQL + in-memory), Stripe payments, session-based auth, a live monitoring dashboard, and Docker container management UI — all in one TypeScript monorepo.
 
-This platform uses a microservices architecture to provide modular, independently deployable services that work together to create a complete e-commerce solution. Each microservice is responsible for a specific domain of functionality.
+---
 
-### Key Components
-
-1. **API Gateway**: Routes client requests to appropriate microservices
-2. **Product Catalog Service**: Manages product information and inventory
-3. **User Service**: Handles user authentication and profile management
-4. **Cart Service**: Manages shopping carts and items
-5. **Order Service**: Processes and manages orders
-6. **Payment Service**: Integrates with Stripe for payment processing
-7. **Notification Service**: Sends email notifications for various events
-
-## Technology Stack
-
-- **Frontend**: React, TypeScript, TailwindCSS, Shadcn/UI
-- **Backend**: Express.js, Node.js
-- **API Communication**: REST, Service Clients pattern
-- **Storage**: PostgreSQL with Drizzle ORM (with in-memory fallback)
-- **Authentication**: Session-based with Passport.js
-- **Payment Processing**: Stripe API
-- **Notification**: Nodemailer
-- **Containerization**: Docker
-
-## Service Interaction
-
-Services communicate through well-defined REST APIs and use a service client pattern to standardize interactions. Each service maintains its own data and exposes endpoints for other services to consume.
-
-### Integration Examples:
-
-- When a user places an order, the Cart Service communicates with the Product Service to verify inventory
-- The Order Service integrates with the Payment Service to process payments
-- The Payment Service integrates with Stripe for secure payment processing
-- The Notification Service sends emails when orders are placed or payment status changes
-
-## Infrastructure Components
-
-Beyond core microservices, the platform includes advanced infrastructure components:
-
-- **Service Discovery**: For automatic service registration and discovery
-- **Centralized Logging**: For aggregating logs across services
-- **Docker Containers**: For consistent deployment environments
-- **Monitoring Dashboard**: For visualizing service health and metrics
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18+)
-- PostgreSQL (optional - in-memory storage available for development)
-- Docker (for containerized deployments)
-- Stripe API keys (for payment processing)
-
-### Environment Variables
-
-The following environment variables are required:
+## System Architecture
 
 ```
-# Database (if using PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/microstore
-
-# Stripe (for payment processing)
-STRIPE_SECRET_KEY=sk_test_...
-VITE_STRIPE_PUBLIC_KEY=pk_test_...
-
-# Email Notifications
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-password
-NOTIFICATION_EMAIL=notifications@example.com
+┌──────────────────────────────────────────────────────────────┐
+│                    Client Application                         │
+│              React + Vite + TailwindCSS + Shadcn/UI           │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ HTTP/REST (relative /api routes)
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    API Gateway (Express)                       │
+│              Rate Limiter · Session Auth · Swagger Docs        │
+│              Service Registry · Health Aggregation             │
+└───┬─────┬──────┬──────┬──────┬──────┬──────┬──────────────────┘
+    │     │      │      │      │      │      │
+    ▼     ▼      ▼      ▼      ▼      ▼      ▼
+┌─────┐ ┌────┐ ┌────┐ ┌─────┐ ┌───────┐ ┌──────────┐
+│Product│ │User│ │Cart│ │Order│ │Payment│ │Notification│
+│Service│ │Svc │ │Svc │ │Svc  │ │Service│ │Service     │
+└──┬───┘ └──┬─┘ └──┬─┘ └──┬──┘ └───┬───┘ └─────┬────┘
+   │        │      │      │        │            │
+   ▼        ▼      ▼      ▼        ▼            │
+┌──────────────────────────────────────┐        │
+│  PostgreSQL (Drizzle ORM)            │        │
+│  └─ In-Memory Fallback (dev)         │        │
+└──────────┬───────────────────────────┘        │
+           │                                    │
+           ▼                                    ▼
+    ┌────────────┐                    ┌──────────────┐
+    │   Stripe   │                    │  SMTP Email   │
+    │  Payments  │                    │  Provider     │
+    └────────────┘                    └──────────────┘
 ```
 
-### Installation and Setup
+### Service Interactions (Checkout Flow)
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Start the development server:
-   ```
-   npm run dev
-   ```
-4. Access the application at: http://localhost:3000
+```
+Client → POST /api/orders
+  OrderService → CartService        (getCartItems)
+  OrderService → ProductService     (verifyInventory)
+  OrderService → PaymentService     (createPaymentIntent)
+  PaymentService → Stripe           (paymentIntents.create)
+  Client ← { clientSecret, order }
+  Client → Stripe                   (confirmCardPayment)
+  Client → POST /api/payments/confirm
+  PaymentService → Stripe           (retrievePaymentIntent)
+  PaymentService → OrderService     (paymentConfirmed)
+  OrderService → CartService        (clearCart)
+  OrderService → ProductService     (decrementInventory)
+  OrderService → NotificationService(sendOrderConfirmation)
+```
+
+### Stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | React 18, TypeScript, TailwindCSS, Shadcn/UI, Framer Motion, Recharts |
+| Backend | Express.js, Node.js, Passport.js (session auth) |
+| API | REST + Swagger/OpenAPI docs at `/api-docs` |
+| Database | PostgreSQL via Drizzle ORM (+ in-memory dev fallback) |
+| Payments | Stripe (Payment Intents API) |
+| Email | Nodemailer + SMTP |
+| Logging | Winston |
+| Containerization | Docker + docker-compose |
+
+---
+
+## Run Anywhere
+
+The app binds to `0.0.0.0:5000` out of the box. The client uses **relative** `/api` routes, so there is **no hardcoded localhost** — it works behind any domain, reverse proxy, or load balancer.
+
+```bash
+# Clone & install
+git clone <repo> && cd EcommerceApi && npm install
+
+# Configure (copy and edit)
+cp .env.example .env
+
+# Development (HMR-enabled)
+npm run dev
+# → http://localhost:5000
+
+# Production
+npm run build && npm start
+# → http://0.0.0.0:5000
+```
+
+Set `APP_URL` in your environment to control the canonical URL used by links and emails.
+
+---
+
+## Containerization
+
+```bash
+# Start full stack (app + PostgreSQL)
+docker compose up --build
+
+# Or build and run standalone
+docker build -t microstore .
+docker run -p 5000:5000 \
+  -e DATABASE_URL=postgresql://... \
+  -e SESSION_SECRET=$(openssl rand -hex 32) \
+  microstore
+```
+
+The app includes a **Docker container management UI** at `/docker` that displays running containers, images, networks, and volumes — useful for operational visibility without leaving the browser.
+
+---
+
+## Observability
+
+| Capability | How |
+|---|---|
+| **Health checks** | Per-service: `/api/products/health`, `/api/cart/health`, etc. Aggregate: `/api/health` |
+| **Service registry dashboard** | `/dashboard` — live service status cards with CPU/memory/request metrics |
+| **API traffic stats** | `/api/gateway/traffic` — 24h request volume time-series |
+| **System metrics** | `/api/gateway/metrics` — orders, users, revenue KPIs |
+| **API documentation** | `/api-docs` — Swagger UI with schemas and endpoint docs |
+| **Request logging** | Winston-based structured logging with response times and payload previews |
+| **Error handling** | Centralized Express error middleware, rate limiting (100 req/15min per IP) |
+
+---
 
 ## Project Structure
 
 ```
-├── client/              # Frontend React application
-│   ├── src/
-│   │   ├── components/  # Reusable UI components
-│   │   ├── hooks/       # Custom React hooks
-│   │   ├── lib/         # Utility functions
-│   │   ├── pages/       # Page components
-│   │   └── services/    # Service clients for API communication
-├── server/              # Backend Express application
-│   ├── services/        # Microservice implementations
-│   ├── integration/     # Integration between services
-│   ├── routes.ts        # API routes
-│   └── storage.ts       # Data storage abstraction
-├── shared/              # Shared code between frontend and backend
-│   └── schema.ts        # Database schema and types
-└── tests/               # Test files
+├── client/                 # React SPA
+│   └── src/
+│       ├── components/     # Reusable UI (Shadcn + custom)
+│       ├── pages/          # Route pages (dashboard, cart, orders, etc.)
+│       ├── lib/            # Axios client, query client
+│       └── services/       # Typed API service clients
+├── server/                 # Express API
+│   ├── controllers/        # Route handlers per domain
+│   ├── services/           # Business logic (one per microservice)
+│   ├── integration/        # Service clients + service registry
+│   ├── middleware/         # Auth, validation, etc.
+│   ├── routes.ts           # All route registration
+│   ├── storage.ts          # IStorage interface + MemStorage
+│   └── pg-storage.ts       # PostgreSQL implementation
+├── shared/                 # Shared Zod schemas + Drizzle types
+│   └── schema.ts           # Single source of truth for validation
+├── tests/                  # Integration & unit tests
+├── migrations/             # Drizzle Kit migrations
+├── docker-compose.yml      # App + PostgreSQL
+└── Dockerfile              # Multi-stage production build
 ```
 
-## Key Features
+---
 
-- **Product Management**: Add, update, and remove products
-- **User Authentication**: Register, login, and manage user profiles
-- **Shopping Cart**: Add products to cart and manage quantities
-- **Order Processing**: Place orders and track status
-- **Payment Integration**: Secure payment processing with Stripe
-- **Service Discovery**: Automatic service registration and health checks
-- **Monitoring Dashboard**: Real-time service metrics and status
-- **Dark/Light Mode**: UI theme switching with smooth transitions
-- **Responsive Design**: Works on mobile, tablet, and desktop devices
+## Key Architectural Decisions
 
-## Development Guidelines
+- **Monolith-first, microservices-ready**: Code is organized into service modules with a service registry, typed service clients, and health endpoints. Extracting any service into its own process means copying the directory and wiring up HTTP clients.
+- **Dual storage backends**: `IStorage` interface with `PgStorage` (production) and `MemStorage` (dev/testing). Auto-selects on startup — no DB required for development.
+- **Shared Zod schemas**: Drizzle ORM tables produce Zod schemas used for both server-side validation and client-side form validation — zero duplication.
+- **Session auth over JWT**: Server-side sessions with `connect-pg-simple` for production, `memorystore` for dev. Simpler revocation, no client token management.
 
-- Each microservice should maintain its own data store
-- Services should communicate via well-defined APIs
-- Use the service client pattern for inter-service communication
-- Validate requests using Zod schemas
-- Write tests for critical functionality
+---
+
+## API Overview
+
+| Service | Key Endpoints |
+|---|---|
+| **Products** | `GET /api/products` (search, filter), `POST`, `PUT`, `DELETE` |
+| **Auth/Users** | `POST /api/auth/login`, `GET /api/auth/me`, CRUD users |
+| **Cart** | `GET /api/cart`, `POST /api/cart/items`, `PUT`, `DELETE` |
+| **Orders** | `POST /api/orders` (checkout), `GET`, status updates |
+| **Payments** | Stripe Payment Intents, confirm, refund via `/api/payments/*` |
+| **Notifications** | `GET /api/notifications`, `POST /api/notifications/send` |
+| **Gateway** | `GET /api/services/status`, `/api/gateway/metrics`, `/api/gateway/traffic` |
+
+Full interactive docs at `/api-docs` when running.
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default |
+|---|---|---|
+| `DATABASE_URL` | for PostgreSQL | — |
+| `SESSION_SECRET` | yes | `microstore-secret-dev` |
+| `STRIPE_SECRET_KEY` | for payments | — |
+| `VITE_STRIPE_PUBLIC_KEY` | for payments | — |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | for email | — |
+| `NOTIFICATION_EMAIL` | for email | — |
+| `NODE_ENV` | — | `development` |
+| `APP_URL` | for canonical URLs | `http://localhost:5000` |
+
+---
+
+## Testing
+
+```bash
+npm test               # Jest test suite
+npm run lint           # ESLint
+npm run check          # TypeScript compiler check
+```
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Diagram
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for a visual representation of the system architecture and service integrations.
+MIT

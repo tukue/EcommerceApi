@@ -15,8 +15,10 @@ describe('Cart Service', () => {
   let testCartItem: CartItem;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test data
     const mockUser: InsertUser = {
@@ -31,11 +33,9 @@ describe('Cart Service', () => {
       price: 19.99,
       category: 'Test',
       inventory: 10,
-      imageUrl: 'https://example.com/image.jpg'
+      imageUrl: 'https://example.com/image.jpg',
+      sku: 'CRT-001'
     };
-    
-    // Need to access the storage mock directly
-    const { storage } = require('../../../server/storage');
     
     testUser = await storage.createUser(mockUser);
     testProduct = await storage.createProduct(mockProduct);
@@ -52,7 +52,7 @@ describe('Cart Service', () => {
       quantity: 2
     };
     
-    testCartItem = await cartService.addItemToCart(testCart.id, testProduct.id, 2);
+    testCartItem = await cartService.addItemToCart(testUser.id, testProduct.id, 2);
   });
 
   describe('createCart', () => {
@@ -135,12 +135,13 @@ describe('Cart Service', () => {
         price: 29.99,
         category: 'Test',
         inventory: 5,
-        imageUrl: 'https://example.com/another-image.jpg'
+        imageUrl: 'https://example.com/another-image.jpg',
+        sku: 'CRT-002'
       };
       
       const product = await storage.createProduct(newProduct);
       
-      const cartItem = await cartService.addItemToCart(testCart.id, product.id, 3);
+      const cartItem = await cartService.addItemToCart(testUser.id, product.id, 3);
       
       expect(cartItem).toBeDefined();
       expect(cartItem.cartId).toBe(testCart.id);
@@ -155,7 +156,7 @@ describe('Cart Service', () => {
     
     it('should update quantity if item already exists', async () => {
       // Add the same product again
-      const cartItem = await cartService.addItemToCart(testCart.id, testProduct.id, 3);
+      const cartItem = await cartService.addItemToCart(testUser.id, testProduct.id, 3);
       
       expect(cartItem).toBeDefined();
       expect(cartItem.cartId).toBe(testCart.id);
@@ -219,10 +220,11 @@ describe('Cart Service', () => {
         price: 15.99,
         category: 'Test',
         inventory: 8,
-        imageUrl: 'https://example.com/one-more-image.jpg'
+        imageUrl: 'https://example.com/one-more-image.jpg',
+        sku: 'CRT-003'
       });
       
-      await cartService.addItemToCart(testCart.id, anotherProduct.id, 1);
+      await cartService.addItemToCart(testUser.id, anotherProduct.id, 1);
       
       // Verify we have multiple items
       let cartWithItems = await cartService.getCartWithItems(testCart.id);

@@ -15,14 +15,17 @@ describe('Product Service', () => {
     price: 19.99,
     category: 'Test Category',
     inventory: 10,
-    imageUrl: 'https://example.com/image.jpg'
+    imageUrl: 'https://example.com/image.jpg',
+    sku: 'TST-001'
   };
 
   let createdProduct: Product;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
+    const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create test data
     createdProduct = await productService.createProduct(mockProduct);
@@ -36,7 +39,8 @@ describe('Product Service', () => {
         price: 29.99,
         category: 'Test Category',
         inventory: 15,
-        imageUrl: 'https://example.com/new-image.jpg'
+        imageUrl: 'https://example.com/new-image.jpg',
+        sku: 'TST-002'
       };
       
       const result = await productService.createProduct(newProduct);

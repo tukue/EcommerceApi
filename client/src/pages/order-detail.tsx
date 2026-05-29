@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { OrderWithItems, OrderStatus, PaymentStatus } from '@shared/schema';
+import { OrderWithItems, OrderStatus, Payment } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import api from '@/lib/axios';
@@ -22,7 +22,7 @@ const OrderDetail: React.FC = () => {
     enabled: orderId > 0,
   });
 
-  const { data: payment, isLoading: isPaymentLoading } = useQuery({
+  const { data: payment } = useQuery<Payment>({
     queryKey: [`/api/payments/${order?.id}`],
     enabled: !!order,
   });
@@ -99,7 +99,8 @@ const OrderDetail: React.FC = () => {
     );
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string | null) => {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleString();
   };
 
@@ -109,7 +110,7 @@ const OrderDetail: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
-              Order {order.orderId || `ORD-${order.id.toString().padStart(4, '0')}`}
+              Order {`ORD-${order.id.toString().padStart(4, '0')}`}
             </h1>
             <p className="mt-1 text-sm text-gray-600">
               Placed on {formatDate(order.createdAt)}
@@ -239,7 +240,7 @@ const OrderDetail: React.FC = () => {
                     <span className="text-gray-500">Status:</span>
                     <span><StatusBadge status={payment.status} /></span>
                     <span className="text-gray-500">Transaction ID:</span>
-                    <span className="truncate">{payment.transactionId}</span>
+                    <span className="truncate">{payment.transactionId ?? 'N/A'}</span>
                     <span className="text-gray-500">Date:</span>
                     <span>{formatDate(payment.createdAt)}</span>
                   </div>

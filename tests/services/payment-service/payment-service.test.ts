@@ -9,6 +9,11 @@ jest.mock('../../../server/storage', () => {
   return { storage: mockStorage };
 });
 
+// Mock the logger
+jest.mock('../../../server/vite', () => ({
+  log: jest.fn()
+}));
+
 // Mock notification service
 jest.mock('../../../server/services/notification-service', () => ({
   sendPaymentConfirmation: jest.fn().mockResolvedValue({}),
@@ -33,11 +38,10 @@ describe('Payment Service', () => {
   let testPayment: Payment;
 
   beforeEach(async () => {
-    // Reset mocks
+    // Reset mocks and storage
     jest.clearAllMocks();
-    
-    // Create test data
     const { storage } = require('../../../server/storage');
+    storage.clear();
     
     // Create user
     const mockUser: InsertUser = {
@@ -60,7 +64,7 @@ describe('Payment Service', () => {
     const mockPayment: InsertPayment = {
       orderId: testOrder.id,
       amount: testOrder.total,
-      method: 'credit_card',
+      paymentMethod: 'credit_card',
       status: PaymentStatus.PENDING
     };
     testPayment = await paymentService.createPayment(mockPayment);
@@ -81,7 +85,7 @@ describe('Payment Service', () => {
       const newPayment: InsertPayment = {
         orderId: anotherOrder.id,
         amount: anotherOrder.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       };
       
@@ -90,7 +94,7 @@ describe('Payment Service', () => {
       expect(result).toBeDefined();
       expect(result.orderId).toBe(anotherOrder.id);
       expect(result.amount).toBe(99.99);
-      expect(result.method).toBe('paypal');
+      expect(result.paymentMethod).toBe('paypal');
       expect(result.status).toBe(PaymentStatus.PENDING);
       expect(result.id).toBeDefined();
       expect(result.createdAt).toBeInstanceOf(Date);
@@ -100,7 +104,7 @@ describe('Payment Service', () => {
       const duplicatePayment: InsertPayment = {
         orderId: testOrder.id,
         amount: testOrder.total,
-        method: 'paypal',
+        paymentMethod: 'paypal',
         status: PaymentStatus.PENDING
       };
       
@@ -164,7 +168,7 @@ describe('Payment Service', () => {
       expect(payment).toBeDefined();
       expect(payment.orderId).toBe(anotherOrder.id);
       expect(payment.amount).toBe(anotherOrder.total);
-      expect(payment.method).toBe('credit_card');
+      expect(payment.paymentMethod).toBe('credit_card');
       expect(payment.status).toBe(PaymentStatus.COMPLETED);
       
       // Check if order status was updated

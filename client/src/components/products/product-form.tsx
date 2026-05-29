@@ -153,6 +153,7 @@ export function ProductForm({ product, isOpen, onClose }: ProductFormProps) {
                   <FormControl>
                     <Textarea 
                       {...field} 
+                      value={field.value ?? ''}
                       placeholder="Product description" 
                       className="resize-none"
                     />
@@ -214,7 +215,7 @@ export function ProductForm({ product, isOpen, onClose }: ProductFormProps) {
                   <FormItem>
                     <FormLabel>Category</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Category" />
+                      <Input {...field} value={field.value ?? ''} placeholder="Category" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -229,7 +230,7 @@ export function ProductForm({ product, isOpen, onClose }: ProductFormProps) {
                 <FormItem>
                   <FormLabel>Image URL</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://example.com/image.jpg" />
+                    <Input {...field} value={field.value ?? ''} placeholder="https://example.com/image.jpg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

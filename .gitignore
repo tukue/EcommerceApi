@@ -1,4 +1,5 @@
 node_modules
+.npx-cache
 dist
 .DS_Store
 server/public
@@ -6,5 +7,5 @@ vite.config.ts.*
 *.tar.gz
 .env 
 database.ts 
-# Add this line to .gitignore
+server/simple-db.js
 server/test-db.js
